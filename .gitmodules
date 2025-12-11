@@ -1,0 +1,6 @@
+[submodule "web"]
+	path = web
+	url = https://github.com/KasumiMercury/primind-web.git
+[submodule "central-backend"]
+	path = central-backend
+	url = https://github.com/KasumiMercury/primind-central-backend.git
