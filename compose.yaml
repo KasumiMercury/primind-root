@@ -1,21 +1,4 @@
 services:
-    central:
-        build:
-            context: ./central-backend/
-            dockerfile: ./Dockerfile
-        volumes:
-            - .:/app
-        ports:
-            - "8080:8080"
-            - "8081:8081"
-        env_file:
-            - .env
-        depends_on:
-            postgres:
-                condition: service_healthy
-            redis:
-                condition: service_healthy
-
     web:
         build:
             context: ./web
@@ -25,17 +8,43 @@ services:
             - "5173:5173"
         env_file:
             - .env
+        environment:
+            NODE_ENV: development
+            WATCHPACK_POLLING: "true"
+        stdin_open: true
+        tty: true
+        networks:
+            - primind_frontend
 
-    postgres:
+    central-backend:
+        build:
+            context: ./central-backend/
+            dockerfile: ./Dockerfile
+            target: dev
+        volumes:
+            - ./central-backend:/app
+        env_file:
+            - .env
+        environment:
+            - PRIMIND_TASKS_URL=http://tasks-api:8080
+            - TASK_QUEUE_NAME=default
+        depends_on:
+            postgres-central:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - primind_frontend
+            - primind_backend
+
+    postgres-central:
         image: postgres:18
         environment:
             POSTGRES_USER: primind_user
             POSTGRES_PASSWORD: primind_password
             POSTGRES_DB: primind_db
-        ports:
-            - "5432:5432"
         volumes:
-            - postgres_data:/var/lib/postgresql
+            - postgres_central_data:/var/lib/postgresql
         healthcheck:
             test:
                 [
@@ -46,23 +55,76 @@ services:
             timeout: 5s
             retries: 5
             start_period: 5s
+        networks:
+            - primind_backend
 
-    migrate:
+    migrate-central:
         image: arigaio/atlas:latest
         command: >
             migrate apply
-            --url postgres://primind_user:primind_password@postgres:5432/primind_db?sslmode=disable
+            --url postgres://primind_user:primind_password@postgres-central:5432/primind_db?sslmode=disable
         depends_on:
-            postgres:
+            postgres-central:
                 condition: service_healthy
         volumes:
             - ./central-backend/migrations/:/migrations
+        networks:
+            - primind_backend
+
+    time-mgmt:
+        build:
+            context: ./time-mgmt
+            dockerfile: ./Dockerfile
+            target: dev
+        volumes:
+            - ./time-mgmt:/app
+        env_file:
+            - .env
+        environment:
+            - POSTGRES_DSN=postgres://timemgmt_user:timemgmt_password@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
+        depends_on:
+            postgres-time-mgmt:
+                condition: service_healthy
+        networks:
+            - primind_backend
+
+    postgres-time-mgmt:
+        image: postgres:18
+        environment:
+            POSTGRES_USER: timemgmt_user
+            POSTGRES_PASSWORD: timemgmt_password
+            POSTGRES_DB: timemgmt_db
+        volumes:
+            - postgres_time_mgmt_data:/var/lib/postgresql
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+        networks:
+            - primind_backend
+
+    migrate-time-mgmt:
+        image: arigaio/atlas:latest
+        command: >
+            migrate apply
+            --url postgres://timemgmt_user:timemgmt_password@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
+        depends_on:
+            postgres-time-mgmt:
+                condition: service_healthy
+        volumes:
+            - ./time-mgmt/migrations/:/migrations
+        networks:
+            - primind_backend
 
     redis:
         image: redis:8
-        command: ["redis-server", "--save", "", "--appendonly", "no"]
-        ports:
-            - "6379:6379"
+        command: ["redis-server", "--appendonly", "yes"]
         volumes:
             - redis_data:/data
         healthcheck:
@@ -71,10 +133,142 @@ services:
             timeout: 5s
             retries: 5
             start_period: 5s
+        networks:
+            - primind_backend
+
+    throttling:
+        build:
+            context: ./throttling
+            dockerfile: ./Dockerfile
+            target: dev
+        volumes:
+            - ./throttling:/app
+        env_file:
+            - .env
+        environment:
+            - REMIND_TIME_MANAGEMENT_URL=http://time-mgmt:8080
+            - PRIMIND_TASKS_URL=http://tasks-api:8080
+            - TASK_QUEUE_NAME=notifications
+        depends_on:
+            - time-mgmt
+        networks:
+            - primind_backend
+
+    notification-invoker:
+        build:
+            context: ./notification-invoker
+            dockerfile: ./Dockerfile
+            target: dev
+        volumes:
+            - ./notification-invoker:/app
+            - ${HOME}/.config/gcloud/application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json:ro
+        working_dir: /app
+        tty: true
+        stdin_open: true
+        env_file:
+            - .env
+        environment:
+            - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
+        networks:
+            - primind_backend
+
+    # Task Queue
+
+    tasks-api:
+        build:
+            context: ./primind-tasks
+            dockerfile: ./Dockerfile
+            target: api
+        environment:
+            - REDIS_ADDR=redis:6379
+            - API_PORT=8080
+            - RETRY_COUNT=3
+        depends_on:
+            redis:
+                condition: service_healthy
+        networks:
+            - primind_backend
+
+    tasks-worker-1:
+        build:
+            context: ./primind-tasks
+            dockerfile: ./Dockerfile
+            target: worker
+        environment:
+            - REDIS_ADDR=redis:6379
+            - QUEUE_NAME=default
+            - TARGET_ENDPOINT=http://notification-invoker:8080/notify
+            - RETRY_COUNT=3
+            - WORKER_CONCURRENCY=10
+            - REQUEST_TIMEOUT=30s
+        depends_on:
+            redis:
+                condition: service_healthy
+            notification-invoker:
+                condition: service_started
+        networks:
+            - primind_backend
+
+    tasks-worker-2:
+        build:
+            context: ./primind-tasks
+            dockerfile: ./Dockerfile
+            target: worker
+        environment:
+            - REDIS_ADDR=redis:6379
+            - QUEUE_NAME=queue2
+            - TARGET_ENDPOINT=http://time-mgmt:8080/api/v1/
+            - RETRY_COUNT=3
+            - WORKER_CONCURRENCY=10
+            - REQUEST_TIMEOUT=30s
+        depends_on:
+            redis:
+                condition: service_healthy
+            time-mgmt:
+                condition: service_started
+        networks:
+            - primind_backend
+
+    asynqmon:
+        image: hibiken/asynqmon:latest
+        ports:
+            - "8081:8080"
+        environment:
+            - REDIS_ADDR=redis:6379
+        depends_on:
+            redis:
+                condition: service_healthy
+        networks:
+            - primind_frontend
+            - primind_backend
+
+    scheduler:
+        image: mcuadros/ofelia:latest
+        command: daemon --docker
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+        labels:
+            ofelia.job-run.throttle-job.schedule: "@every 10m"
+            ofelia.job-run.throttle-job.image: "curlimages/curl:latest"
+            ofelia.job-run.throttle-job.network: "primind-root_primind_backend"
+            ofelia.job-run.throttle-job.command: "-s -X POST http://throttling:8080/api/v1/throttle"
+        depends_on:
+            - throttling
+        networks:
+            - primind_backend
+
+networks:
+    primind_frontend:
+        name: primind_frontend
+        driver: bridge
+    primind_backend:
+        name: primind_backend
+        driver: bridge
 
 volumes:
-    postgres_data:
+    postgres_central_data:
+        driver: local
+    postgres_time_mgmt_data:
         driver: local
     redis_data:
         driver: local
-
