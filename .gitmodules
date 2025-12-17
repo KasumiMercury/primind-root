@@ -4,3 +4,15 @@
 [submodule "central-backend"]
 	path = central-backend
 	url = https://github.com/KasumiMercury/primind-central-backend.git
+[submodule "throttling"]
+	path = throttling
+	url = https://github.com/KasumiMercury/primind-notification-throttling.git
+[submodule "notification-invoker"]
+	path = notification-invoker
+	url = https://github.com/KasumiMercury/primind-notification-invoker.git
+[submodule "time-mgmt"]
+	path = time-mgmt
+	url = https://github.com/KasumiMercury/primind-remind-time-mgmt.git
+[submodule "primind-tasks"]
+	path = primind-tasks
+	url = https://github.com/KasumiMercury/primind-tasks.git
