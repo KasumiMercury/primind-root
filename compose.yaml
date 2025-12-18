@@ -27,7 +27,7 @@ services:
             - .env
         environment:
             - PRIMIND_TASKS_URL=http://tasks-api:8080
-            - TASK_QUEUE_NAME=default
+            - TASK_QUEUE_NAME=remind
         depends_on:
             postgres-central:
                 condition: service_healthy
@@ -148,7 +148,7 @@ services:
         environment:
             - REMIND_TIME_MANAGEMENT_URL=http://time-mgmt:8080
             - PRIMIND_TASKS_URL=http://tasks-api:8080
-            - TASK_QUEUE_NAME=notifications
+            - TASK_QUEUE_NAME=invoke
         depends_on:
             - time-mgmt
         networks:
@@ -196,7 +196,7 @@ services:
             target: worker
         environment:
             - REDIS_ADDR=redis:6379
-            - QUEUE_NAME=default
+            - QUEUE_NAME=invoke
             - TARGET_ENDPOINT=http://notification-invoker:8080/notify
             - RETRY_COUNT=3
             - WORKER_CONCURRENCY=10
@@ -216,8 +216,8 @@ services:
             target: worker
         environment:
             - REDIS_ADDR=redis:6379
-            - QUEUE_NAME=queue2
-            - TARGET_ENDPOINT=http://time-mgmt:8080/api/v1/
+            - QUEUE_NAME=remind
+            - TARGET_ENDPOINT=http://time-mgmt:8080/api/v1/reminds
             - RETRY_COUNT=3
             - WORKER_CONCURRENCY=10
             - REQUEST_TIMEOUT=30s
@@ -243,15 +243,16 @@ services:
             - primind_backend
 
     scheduler:
-        image: mcuadros/ofelia:latest
-        command: daemon --docker
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock:ro
-        labels:
-            ofelia.job-run.throttle-job.schedule: "@every 10m"
-            ofelia.job-run.throttle-job.image: "curlimages/curl:latest"
-            ofelia.job-run.throttle-job.network: "primind-root_primind_backend"
-            ofelia.job-run.throttle-job.command: "-s -X POST http://throttling:8080/api/v1/throttle"
+        image: curlimages/curl:latest
+        entrypoint: ["/bin/sh", "-c"]
+        command:
+            - |
+                echo "Scheduler started - polling every 60 seconds"
+                while true; do
+                  echo "[$(date)] Triggering throttle..."
+                  curl -s -X POST http://throttling:8080/api/v1/throttle || echo "Failed to call throttle API"
+                  sleep 60
+                done
         depends_on:
             - throttling
         networks:
