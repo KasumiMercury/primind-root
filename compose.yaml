@@ -27,7 +27,8 @@ services:
             - .env
         environment:
             - PRIMIND_TASKS_URL=http://tasks-api:8080
-            - TASK_QUEUE_NAME=remind
+            - REMIND_REGISTER_QUEUE_NAME=remind-register
+            - REMIND_CANCEL_QUEUE_NAME=remind-cancel
         depends_on:
             postgres-central:
                 condition: service_healthy
@@ -216,8 +217,28 @@ services:
             target: worker
         environment:
             - REDIS_ADDR=redis:6379
-            - QUEUE_NAME=remind
+            - QUEUE_NAME=remind-register
             - TARGET_ENDPOINT=http://time-mgmt:8080/api/v1/reminds
+            - RETRY_COUNT=3
+            - WORKER_CONCURRENCY=10
+            - REQUEST_TIMEOUT=30s
+        depends_on:
+            redis:
+                condition: service_healthy
+            time-mgmt:
+                condition: service_started
+        networks:
+            - primind_backend
+
+    tasks-worker-3:
+        build:
+            context: ./primind-tasks
+            dockerfile: ./Dockerfile
+            target: worker
+        environment:
+            - REDIS_ADDR=redis:6379
+            - QUEUE_NAME=remind-cancel
+            - TARGET_ENDPOINT=http://time-mgmt:8080/api/v1/reminds/cancel
             - RETRY_COUNT=3
             - WORKER_CONCURRENCY=10
             - REQUEST_TIMEOUT=30s
