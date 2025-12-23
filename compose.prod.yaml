@@ -1,0 +1,298 @@
+services:
+    cloudflared:
+        image: cloudflare/cloudflared:latest
+        command: tunnel --no-autoupdate run
+        environment:
+            - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+        networks:
+            - primind_frontend
+        restart: unless-stopped
+        depends_on:
+            - web
+
+    web:
+        build:
+            context: ./web
+            target: prod
+        env_file:
+            - .env
+        environment:
+            NODE_ENV: production
+        networks:
+            - primind_frontend
+        restart: unless-stopped
+
+    central-backend:
+        build:
+            context: ./central-backend
+            target: runner
+        env_file:
+            - .env
+        environment:
+            - PRIMIND_TASKS_URL=http://tasks-api:8080
+            - REMIND_REGISTER_QUEUE_NAME=remind-register
+            - REMIND_CANCEL_QUEUE_NAME=remind-cancel
+        depends_on:
+            postgres-central:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - primind_frontend
+            - primind_backend
+        restart: unless-stopped
+
+    time-mgmt:
+        build:
+            context: ./time-mgmt
+            target: runner
+        env_file:
+            - .env
+        environment:
+            - POSTGRES_DSN=postgres://timemgmt_user:timemgmt_password@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
+        depends_on:
+            postgres-time-mgmt:
+                condition: service_healthy
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    throttling:
+        build:
+            context: ./throttling
+            target: runner
+        env_file:
+            - .env
+        environment:
+            - REMIND_TIME_MANAGEMENT_URL=http://time-mgmt:8080
+            - PRIMIND_TASKS_URL=http://tasks-api:8080
+            - TASK_QUEUE_NAME=invoke
+        depends_on:
+            - time-mgmt
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    notification-invoker:
+        build:
+            context: ./notification-invoker
+            target: runner
+        env_file:
+            - .env
+        environment:
+            - GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp-credentials.json
+        volumes:
+            - ${GCP_CREDENTIALS_FILE}:/secrets/gcp-credentials.json:ro
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    # === Databases ===
+    postgres-central:
+        image: postgres:18
+        environment:
+            POSTGRES_USER: primind_user
+            POSTGRES_PASSWORD: ${POSTGRES_CENTRAL_PASSWORD}
+            POSTGRES_DB: primind_db
+        volumes:
+            - postgres_central_data:/var/lib/postgresql
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    postgres-time-mgmt:
+        image: postgres:18
+        environment:
+            POSTGRES_USER: timemgmt_user
+            POSTGRES_PASSWORD: ${POSTGRES_TIME_MGMT_PASSWORD}
+            POSTGRES_DB: timemgmt_db
+        volumes:
+            - postgres_time_mgmt_data:/var/lib/postgresql
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    redis:
+        image: redis:8
+        command: ["redis-server", "--appendonly", "yes"]
+        volumes:
+            - redis_data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    # === Migrations (one-shot) ===
+    migrate-central:
+        image: arigaio/atlas:latest
+        command: >
+            migrate apply
+            --url postgres://primind_user:${POSTGRES_CENTRAL_PASSWORD}@postgres-central:5432/primind_db?sslmode=disable
+        depends_on:
+            postgres-central:
+                condition: service_healthy
+        volumes:
+            - ./central-backend/migrations/:/migrations
+        networks:
+            - primind_backend
+
+    migrate-time-mgmt:
+        image: arigaio/atlas:latest
+        command: >
+            migrate apply
+            --url postgres://timemgmt_user:${POSTGRES_TIME_MGMT_PASSWORD}@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
+        depends_on:
+            postgres-time-mgmt:
+                condition: service_healthy
+        volumes:
+            - ./time-mgmt/migrations/:/migrations
+        networks:
+            - primind_backend
+
+    tasks-api:
+        build:
+            context: ./primind-tasks
+            target: api
+        environment:
+            - REDIS_ADDR=redis:6379
+            - API_PORT=8080
+            - RETRY_COUNT=3
+        depends_on:
+            redis:
+                condition: service_healthy
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    tasks-worker-1:
+        build:
+            context: ./primind-tasks
+            target: worker
+        environment:
+            - REDIS_ADDR=redis:6379
+            - QUEUE_NAME=invoke
+            - TARGET_ENDPOINT=http://notification-invoker:8080/notify
+            - RETRY_COUNT=3
+            - WORKER_CONCURRENCY=10
+            - REQUEST_TIMEOUT=30s
+        depends_on:
+            redis:
+                condition: service_healthy
+            notification-invoker:
+                condition: service_started
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    tasks-worker-2:
+        build:
+            context: ./primind-tasks
+            target: worker
+        environment:
+            - REDIS_ADDR=redis:6379
+            - QUEUE_NAME=remind-register
+            - TARGET_ENDPOINT=http://time-mgmt:8080/api/v1/reminds
+            - RETRY_COUNT=3
+            - WORKER_CONCURRENCY=10
+            - REQUEST_TIMEOUT=30s
+        depends_on:
+            redis:
+                condition: service_healthy
+            time-mgmt:
+                condition: service_started
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    tasks-worker-3:
+        build:
+            context: ./primind-tasks
+            target: worker
+        environment:
+            - REDIS_ADDR=redis:6379
+            - QUEUE_NAME=remind-cancel
+            - TARGET_ENDPOINT=http://time-mgmt:8080/api/v1/reminds/cancel
+            - RETRY_COUNT=3
+            - WORKER_CONCURRENCY=10
+            - REQUEST_TIMEOUT=30s
+        depends_on:
+            redis:
+                condition: service_healthy
+            time-mgmt:
+                condition: service_started
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    # === Monitoring ===
+    asynqmon:
+        image: hibiken/asynqmon:latest
+        ports:
+            - "8081:8080"
+        environment:
+            - REDIS_ADDR=redis:6379
+        depends_on:
+            redis:
+                condition: service_healthy
+        networks:
+            - primind_frontend
+            - primind_backend
+        restart: unless-stopped
+
+    scheduler:
+        image: curlimages/curl:latest
+        entrypoint: ["/bin/sh", "-c"]
+        command:
+            - |
+                echo "Scheduler started - polling every 60 seconds"
+                while true; do
+                  echo "[$(date)] Triggering throttle..."
+                  curl -s -X POST http://throttling:8080/api/v1/throttle || echo "Failed"
+                  sleep 60
+                done
+        depends_on:
+            - throttling
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+networks:
+    primind_frontend:
+        name: primind_frontend
+        driver: bridge
+    primind_backend:
+        name: primind_backend
+        driver: bridge
+
+volumes:
+    postgres_central_data:
+        driver: local
+    postgres_time_mgmt_data:
+        driver: local
+    redis_data:
+        driver: local
