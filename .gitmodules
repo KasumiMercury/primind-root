@@ -16,3 +16,6 @@
 [submodule "primind-tasks"]
 	path = primind-tasks
 	url = https://github.com/KasumiMercury/primind-tasks.git
+[submodule "nats-bridge"]
+	path = nats-bridge
+	url = https://github.com/KasumiMercury/primind-nats-bridge
