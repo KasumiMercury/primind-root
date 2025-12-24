@@ -180,9 +180,9 @@ services:
             target: dev
         volumes:
             - ./nats-bridge:/app
+            - ./nats-bridge.json:/app/config.json:ro
         environment:
-            - NATS_URL=nats://nats:4222
-            - THROTTLING_URL=http://throttling:8080
+            - CONFIG_PATH=/app/config.json
         depends_on:
             nats:
                 condition: service_healthy
