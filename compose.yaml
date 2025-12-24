@@ -83,8 +83,11 @@ services:
             - .env
         environment:
             - POSTGRES_DSN=postgres://timemgmt_user:timemgmt_password@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
+            - NATS_URL=nats://nats:4222
         depends_on:
             postgres-time-mgmt:
+                condition: service_healthy
+            nats:
                 condition: service_healthy
         networks:
             - primind_backend
@@ -137,6 +140,20 @@ services:
         networks:
             - primind_backend
 
+    nats:
+        image: nats:2.10-alpine
+        command: ["--jetstream", "--store_dir=/data"]
+        volumes:
+            - nats_data:/data
+        healthcheck:
+            test: ["CMD", "nats-server", "--version"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+        networks:
+            - primind_backend
+
     throttling:
         build:
             context: ./throttling
@@ -151,7 +168,28 @@ services:
             - PRIMIND_TASKS_URL=http://tasks-api:8080
             - TASK_QUEUE_NAME=invoke
         depends_on:
-            - time-mgmt
+            time-mgmt:
+                condition: service_started
+        networks:
+            - primind_backend
+
+    nats-bridge:
+        build:
+            context: ./nats-bridge
+            dockerfile: ./Dockerfile
+            target: dev
+        volumes:
+            - ./nats-bridge:/app
+        environment:
+            - NATS_URL=nats://nats:4222
+            - THROTTLING_URL=http://throttling:8080
+        depends_on:
+            nats:
+                condition: service_healthy
+            throttling:
+                condition: service_started
+            time-mgmt:
+                condition: service_started
         networks:
             - primind_backend
 
@@ -293,4 +331,6 @@ volumes:
     postgres_time_mgmt_data:
         driver: local
     redis_data:
+        driver: local
+    nats_data:
         driver: local
