@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Grafana provisioning: datasources",
+    "type": "object",
+    "required": ["apiVersion"],
+    "properties": {
+        "apiVersion": { "type": "integer", "enum": [1] },
+        "datasources": {
+            "type": "array",
+            "items": { "type": "object", "additionalProperties": true }
+        },
+        "deleteDatasources": {
+            "type": "array",
+            "items": { "type": "object", "additionalProperties": true }
+        }
+    },
+    "additionalProperties": true
+}
