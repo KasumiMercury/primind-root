@@ -3,6 +3,8 @@ services:
         build:
             context: ./web
             target: dev
+            args:
+                VITE_APP_VERSION: ${WEB_VERSION:-dev}
         command: ["pnpm", "run", "dev"]
         ports:
             - "5173:5173"
@@ -21,14 +23,20 @@ services:
             context: ./central-backend/
             dockerfile: ./Dockerfile
             target: dev
+            args:
+                VERSION: ${SERVICE_VERSION:-dev}
         volumes:
             - ./central-backend:/app
         env_file:
             - .env
         environment:
+            - ENV=${ENV:-dev}
+            - SERVICE_NAME=central-backend
             - PRIMIND_TASKS_URL=http://tasks-api:8080
             - REMIND_REGISTER_QUEUE_NAME=remind-register
             - REMIND_CANCEL_QUEUE_NAME=remind-cancel
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             postgres-central:
                 condition: service_healthy
@@ -77,13 +85,19 @@ services:
             context: ./time-mgmt
             dockerfile: ./Dockerfile
             target: dev
+            args:
+                VERSION: ${SERVICE_VERSION:-dev}
         volumes:
             - ./time-mgmt:/app
         env_file:
             - .env
         environment:
+            - ENV=${ENV:-dev}
+            - SERVICE_NAME=time-mgmt
             - POSTGRES_DSN=postgres://timemgmt_user:timemgmt_password@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
             - NATS_URL=nats://nats:4222
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             postgres-time-mgmt:
                 condition: service_healthy
@@ -159,14 +173,20 @@ services:
             context: ./throttling
             dockerfile: ./Dockerfile
             target: dev
+            args:
+                VERSION: ${SERVICE_VERSION:-dev}
         volumes:
             - ./throttling:/app
         env_file:
             - .env
         environment:
+            - ENV=${ENV:-dev}
+            - SERVICE_NAME=notification-throttling
             - REMIND_TIME_MANAGEMENT_URL=http://time-mgmt:8080
             - PRIMIND_TASKS_URL=http://tasks-api:8080
             - TASK_QUEUE_NAME=invoke
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             time-mgmt:
                 condition: service_started
@@ -178,11 +198,17 @@ services:
             context: ./nats-bridge
             dockerfile: ./Dockerfile
             target: dev
+            args:
+                VERSION: ${SERVICE_VERSION:-dev}
         volumes:
             - ./nats-bridge:/app
             - ./nats-bridge.json:/app/config.json:ro
         environment:
             - CONFIG_PATH=/app/config.json
+            - ENV=${ENV:-dev}
+            - SERVICE_NAME=nats-bridge
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             nats:
                 condition: service_healthy
@@ -198,6 +224,8 @@ services:
             context: ./notification-invoker
             dockerfile: ./Dockerfile
             target: dev
+            args:
+                VERSION: ${SERVICE_VERSION:-dev}
         volumes:
             - ./notification-invoker:/app
             - ${HOME}/.config/gcloud/application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json:ro
@@ -208,6 +236,10 @@ services:
             - .env
         environment:
             - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
+            - ENV=${ENV:-dev}
+            - SERVICE_NAME=notification-invoker
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         networks:
             - primind_backend
 
@@ -218,10 +250,16 @@ services:
             context: ./primind-tasks
             dockerfile: ./Dockerfile
             target: api
+            args:
+                VERSION: ${SERVICE_VERSION:-dev}
         environment:
             - REDIS_ADDR=redis:6379
             - API_PORT=8080
             - RETRY_COUNT=3
+            - ENV=${ENV:-dev}
+            - SERVICE_NAME=primind-tasks-api
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             redis:
                 condition: service_healthy
@@ -233,6 +271,8 @@ services:
             context: ./primind-tasks
             dockerfile: ./Dockerfile
             target: worker
+            args:
+                VERSION: ${SERVICE_VERSION:-dev}
         environment:
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=invoke
@@ -240,6 +280,10 @@ services:
             - RETRY_COUNT=3
             - WORKER_CONCURRENCY=10
             - REQUEST_TIMEOUT=30s
+            - ENV=${ENV:-dev}
+            - SERVICE_NAME=primind-tasks-worker-invoke
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             redis:
                 condition: service_healthy
@@ -253,6 +297,8 @@ services:
             context: ./primind-tasks
             dockerfile: ./Dockerfile
             target: worker
+            args:
+                VERSION: ${SERVICE_VERSION:-dev}
         environment:
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=remind-register
@@ -260,6 +306,10 @@ services:
             - RETRY_COUNT=3
             - WORKER_CONCURRENCY=10
             - REQUEST_TIMEOUT=30s
+            - ENV=${ENV:-dev}
+            - SERVICE_NAME=primind-tasks-worker-remind-register
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             redis:
                 condition: service_healthy
@@ -273,6 +323,8 @@ services:
             context: ./primind-tasks
             dockerfile: ./Dockerfile
             target: worker
+            args:
+                VERSION: ${SERVICE_VERSION:-dev}
         environment:
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=remind-cancel
@@ -280,6 +332,10 @@ services:
             - RETRY_COUNT=3
             - WORKER_CONCURRENCY=10
             - REQUEST_TIMEOUT=30s
+            - ENV=${ENV:-dev}
+            - SERVICE_NAME=primind-tasks-worker-remind-cancel
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             redis:
                 condition: service_healthy
@@ -297,6 +353,50 @@ services:
         depends_on:
             redis:
                 condition: service_healthy
+        networks:
+            - primind_frontend
+            - primind_backend
+
+    jaeger:
+        image: jaegertracing/jaeger:latest
+        ports:
+            - "16686:16686"
+            - "4318:4318"
+        environment:
+            - COLLECTOR_OTLP_ENABLED=true
+        networks:
+            - primind_frontend
+            - primind_backend
+
+    prometheus:
+        image: prom/prometheus:latest
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - prometheus_data:/prometheus
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.enable-lifecycle"
+            - "--web.enable-otlp-receiver"
+        networks:
+            - primind_frontend
+            - primind_backend
+
+    grafana:
+        image: grafana/grafana:latest
+        ports:
+            - "3000:3000"
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+            - GF_USERS_ALLOW_SIGN_UP=false
+        volumes:
+            - grafana_data:/var/lib/grafana
+            - ./grafana/provisioning:/etc/grafana/provisioning:ro
+        depends_on:
+            - prometheus
         networks:
             - primind_frontend
             - primind_backend
@@ -333,4 +433,8 @@ volumes:
     redis_data:
         driver: local
     nats_data:
+        driver: local
+    prometheus_data:
+        driver: local
+    grafana_data:
         driver: local
