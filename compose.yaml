@@ -185,11 +185,14 @@ services:
             - REMIND_TIME_MANAGEMENT_URL=http://time-mgmt:8080
             - PRIMIND_TASKS_URL=http://tasks-api:8080
             - TASK_QUEUE_NAME=invoke
+            - REDIS_ADDR=redis:6379
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             time-mgmt:
                 condition: service_started
+            redis:
+                condition: service_healthy
         networks:
             - primind_backend
 
