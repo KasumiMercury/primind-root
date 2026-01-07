@@ -283,7 +283,7 @@ services:
             POSTGRES_PASSWORD: ${POSTGRES_CENTRAL_PASSWORD}
             POSTGRES_DB: primind_db
         volumes:
-            - postgres_central_data:/var/lib/postgresql/data
+            - postgres_central_data:/var/lib/postgresql
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U primind_user -d primind_db"]
             interval: 10s
@@ -306,7 +306,7 @@ services:
             POSTGRES_PASSWORD: ${POSTGRES_TIME_MGMT_PASSWORD}
             POSTGRES_DB: timemgmt_db
         volumes:
-            - postgres_time_mgmt_data:/var/lib/postgresql/data
+            - postgres_time_mgmt_data:/var/lib/postgresql
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U timemgmt_user -d timemgmt_db"]
             interval: 10s
