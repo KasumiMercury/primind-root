@@ -1,0 +1,115 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  COMPOSE_DEV: compose.yaml
+  COMPOSE_PROD: compose.prod.yaml
+
+tasks:
+  dev:up:
+    desc: Start all services in development mode
+    cmds:
+      - docker compose -f {{.COMPOSE_DEV}} up -d
+
+  dev:build:
+    desc: Build and start all services in development mode
+    cmds:
+      - docker compose -f {{.COMPOSE_DEV}} up -d --build
+
+  dev:down:
+    desc: Stop all development services
+    cmds:
+      - docker compose -f {{.COMPOSE_DEV}} down
+
+  dev:logs:
+    desc: Show logs for development services
+    cmds:
+      - docker compose -f {{.COMPOSE_DEV}} logs -f {{.CLI_ARGS}}
+
+  dev:ps:
+    desc: Show status of development services
+    cmds:
+      - docker compose -f {{.COMPOSE_DEV}} ps
+
+  prod:up:
+    desc: Start backend services in production mode
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} up -d
+
+  prod:build:
+    desc: Build and start backend services in production mode
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} up -d --build
+
+  prod:down:
+    desc: Stop production services
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} down
+
+  prod:logs:
+    desc: Show logs for production services
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} logs -f {{.CLI_ARGS}}
+
+  prod:ps:
+    desc: Show status of production services
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} ps
+
+  prod:web:up:
+    desc: Start full system in production mode (backend + web frontend)
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} --profile web up -d
+
+  prod:web:build:
+    desc: Build and start full system in production mode
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} --profile web up -d --build
+
+  prod:web:down:
+    desc: Stop full system production services
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} --profile web down
+
+  prod:web:logs:
+    desc: Show logs for full system production services
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} --profile web logs -f {{.CLI_ARGS}}
+
+  prod:web:ps:
+    desc: Show status of full system production services
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} --profile web ps
+
+  clean:
+    desc: Clean up all project resources
+    cmds:
+      - docker compose -f {{.COMPOSE_DEV}} down -v --remove-orphans
+      - docker compose -f {{.COMPOSE_PROD}} --profile web down -v --remove-orphans
+
+  clean:images:
+    desc: Remove all project images
+    cmds:
+      - docker compose -f {{.COMPOSE_DEV}} down --rmi local
+      - docker compose -f {{.COMPOSE_PROD}} --profile web down --rmi local
+
+  migrate:
+    desc: Run database migrations (development)
+    cmds:
+      - docker compose -f {{.COMPOSE_DEV}} up migrate-central migrate-time-mgmt
+
+  migrate:prod:
+    desc: Run database migrations (production)
+    cmds:
+      - docker compose -f {{.COMPOSE_PROD}} up migrate-central migrate-time-mgmt
+
+  monitoring:
+    desc: Open monitoring URLs in browser
+    cmds:
+      - cmd: 'echo "Grafana:    http://localhost:3001"'
+      - cmd: 'echo "Prometheus: http://localhost:9090"'
+      - cmd: 'echo "Jaeger:     http://localhost:16686"'
+      - cmd: 'echo "Asynqmon:   http://localhost:8081"'
+    silent: true
+
