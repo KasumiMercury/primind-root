@@ -56,11 +56,7 @@ services:
             - web
 
     central-backend:
-        build:
-            context: ./central-backend
-            target: runner
-            args:
-                VERSION: ${SERVICE_VERSION:-prod}
+        image: ghcr.io/kasumimercury/primind-central-backend:sha-4a0e25c
         env_file:
             - .env
         environment:
@@ -104,11 +100,7 @@ services:
                     cpus: "0.25"
 
     time-mgmt:
-        build:
-            context: ./time-mgmt
-            target: runner
-            args:
-                VERSION: ${SERVICE_VERSION:-prod}
+        image: ghcr.io/kasumimercury/primind-remind-time-mgmt:sha-e995428
         env_file:
             - .env
         environment:
@@ -148,11 +140,7 @@ services:
                     cpus: "0.25"
 
     throttling:
-        build:
-            context: ./throttling
-            target: runner
-            args:
-                VERSION: ${SERVICE_VERSION:-prod}
+        image: ghcr.io/kasumimercury/primind-notification-throttling:sha-86c536b
         env_file:
             - .env
         environment:
@@ -194,11 +182,7 @@ services:
                     cpus: "0.25"
 
     notification-invoker:
-        build:
-            context: ./notification-invoker
-            target: runner
-            args:
-                VERSION: ${SERVICE_VERSION:-prod}
+        image: ghcr.io/kasumimercury/primind-notification-invoker:sha-5987b5b
         env_file:
             - .env
         environment:
@@ -233,11 +217,7 @@ services:
                     cpus: "0.25"
 
     nats-bridge:
-        build:
-            context: ./nats-bridge
-            target: runner
-            args:
-                VERSION: ${SERVICE_VERSION:-prod}
+        image: ghcr.io/kasumimercury/primind-nats-bridge:sha-79b9988
         environment:
             - ENV=production
             - SERVICE_NAME=nats-bridge
@@ -390,11 +370,7 @@ services:
             - primind_backend
 
     tasks-api:
-        build:
-            context: ./primind-tasks
-            target: api
-            args:
-                VERSION: ${SERVICE_VERSION:-prod}
+        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-api
         environment:
             - ENV=production
             - SERVICE_NAME=taskqueue-api
@@ -429,11 +405,7 @@ services:
                     cpus: "0.1"
 
     tasks-worker-1:
-        build:
-            context: ./primind-tasks
-            target: worker
-            args:
-                VERSION: ${SERVICE_VERSION:-prod}
+        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
         environment:
             - ENV=production
             - SERVICE_NAME=taskqueue-worker-invoke
@@ -460,11 +432,7 @@ services:
                     cpus: "0.1"
 
     tasks-worker-2:
-        build:
-            context: ./primind-tasks
-            target: worker
-            args:
-                VERSION: ${SERVICE_VERSION:-prod}
+        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
         environment:
             - ENV=production
             - SERVICE_NAME=taskqueue-worker-register
@@ -491,11 +459,7 @@ services:
                     cpus: "0.1"
 
     tasks-worker-3:
-        build:
-            context: ./primind-tasks
-            target: worker
-            args:
-                VERSION: ${SERVICE_VERSION:-prod}
+        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
         environment:
             - ENV=production
             - SERVICE_NAME=taskqueue-worker-cancel
