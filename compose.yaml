@@ -19,12 +19,7 @@ services:
             - primind_frontend
 
     central-backend:
-        build:
-            context: ./central-backend/
-            dockerfile: ./Dockerfile
-            target: dev
-            args:
-                VERSION: ${SERVICE_VERSION:-dev}
+        image: ghcr.io/kasumimercury/primind-central-backend:sha-4a0e25c
         volumes:
             - ./central-backend:/app
         env_file:
@@ -81,12 +76,7 @@ services:
             - primind_backend
 
     time-mgmt:
-        build:
-            context: ./time-mgmt
-            dockerfile: ./Dockerfile
-            target: dev
-            args:
-                VERSION: ${SERVICE_VERSION:-dev}
+        image: ghcr.io/kasumimercury/primind-remind-time-mgmt:sha-e995428
         volumes:
             - ./time-mgmt:/app
         env_file:
@@ -169,12 +159,7 @@ services:
             - primind_backend
 
     throttling:
-        build:
-            context: ./throttling
-            dockerfile: ./Dockerfile
-            target: dev
-            args:
-                VERSION: ${SERVICE_VERSION:-dev}
+        image: ghcr.io/kasumimercury/primind-notification-throttling:sha-86c536b
         volumes:
             - ./throttling:/app
         env_file:
@@ -197,12 +182,7 @@ services:
             - primind_backend
 
     nats-bridge:
-        build:
-            context: ./nats-bridge
-            dockerfile: ./Dockerfile
-            target: dev
-            args:
-                VERSION: ${SERVICE_VERSION:-dev}
+        image: ghcr.io/kasumimercury/primind-nats-bridge:sha-79b9988
         volumes:
             - ./nats-bridge:/app
             - ./nats-bridge.json:/app/config.json:ro
@@ -223,12 +203,7 @@ services:
             - primind_backend
 
     notification-invoker:
-        build:
-            context: ./notification-invoker
-            dockerfile: ./Dockerfile
-            target: dev
-            args:
-                VERSION: ${SERVICE_VERSION:-dev}
+        image: ghcr.io/kasumimercury/primind-notification-invoker:sha-5987b5b
         volumes:
             - ./notification-invoker:/app
             - ${HOME}/.config/gcloud/application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json:ro
@@ -249,12 +224,7 @@ services:
     # Task Queue
 
     tasks-api:
-        build:
-            context: ./primind-tasks
-            dockerfile: ./Dockerfile
-            target: api
-            args:
-                VERSION: ${SERVICE_VERSION:-dev}
+        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-api
         environment:
             - REDIS_ADDR=redis:6379
             - API_PORT=8080
@@ -270,12 +240,7 @@ services:
             - primind_backend
 
     tasks-worker-1:
-        build:
-            context: ./primind-tasks
-            dockerfile: ./Dockerfile
-            target: worker
-            args:
-                VERSION: ${SERVICE_VERSION:-dev}
+        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
         environment:
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=invoke
@@ -296,12 +261,7 @@ services:
             - primind_backend
 
     tasks-worker-2:
-        build:
-            context: ./primind-tasks
-            dockerfile: ./Dockerfile
-            target: worker
-            args:
-                VERSION: ${SERVICE_VERSION:-dev}
+        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
         environment:
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=remind-register
@@ -322,12 +282,7 @@ services:
             - primind_backend
 
     tasks-worker-3:
-        build:
-            context: ./primind-tasks
-            dockerfile: ./Dockerfile
-            target: worker
-            args:
-                VERSION: ${SERVICE_VERSION:-dev}
+        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
         environment:
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=remind-cancel
