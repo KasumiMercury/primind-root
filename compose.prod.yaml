@@ -35,23 +35,12 @@ services:
             - .env
         environment:
             - NODE_ENV=production
-        healthcheck:
-            test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 30s
         networks:
             - primind_frontend
         restart: unless-stopped
         depends_on:
             central-backend:
                 condition: service_healthy
-        deploy:
-            resources:
-                limits:
-                    memory: 256M
-                    cpus: "0.5"
         profiles:
             - web
 
@@ -69,19 +58,6 @@ services:
             - REMIND_CANCEL_QUEUE_NAME=remind-cancel
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "wget",
-                    "--spider",
-                    "-q",
-                    "http://localhost:8080/health",
-                ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 10s
         depends_on:
             postgres-central:
                 condition: service_healthy
@@ -110,19 +86,6 @@ services:
             - NATS_URL=nats://nats:4222
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "wget",
-                    "--spider",
-                    "-q",
-                    "http://localhost:8080/health",
-                ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 10s
         depends_on:
             postgres-time-mgmt:
                 condition: service_healthy
@@ -133,11 +96,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 128M
-                    cpus: "0.25"
 
     throttling:
         image: ghcr.io/kasumimercury/primind-notification-throttling:sha-86c536b
@@ -152,34 +110,14 @@ services:
             - REDIS_ADDR=redis:6379
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "wget",
-                    "--spider",
-                    "-q",
-                    "http://localhost:8080/health",
-                ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 10s
         depends_on:
             time-mgmt:
                 condition: service_healthy
             redis:
                 condition: service_healthy
-            tasks-api:
-                condition: service_started
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 128M
-                    cpus: "0.25"
 
     notification-invoker:
         image: ghcr.io/kasumimercury/primind-notification-invoker:sha-5987b5b
@@ -194,27 +132,9 @@ services:
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         volumes:
             - ${GCP_CREDENTIALS_FILE}:/secrets/gcp-credentials.json:ro
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "wget",
-                    "--spider",
-                    "-q",
-                    "http://localhost:8080/health",
-                ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 10s
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 128M
-                    cpus: "0.25"
 
     nats-bridge:
         image: ghcr.io/kasumimercury/primind-nats-bridge:sha-79b9988
@@ -226,19 +146,6 @@ services:
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         volumes:
             - ./nats-bridge.json:/app/config.json:ro
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "wget",
-                    "--spider",
-                    "-q",
-                    "http://localhost:8080/health",
-                ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 10s
         depends_on:
             nats:
                 condition: service_healthy
@@ -249,11 +156,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 64M
-                    cpus: "0.1"
 
     # === Databases ===
     postgres-central:
@@ -273,11 +175,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 512M
-                    cpus: "0.5"
 
     postgres-time-mgmt:
         image: postgres:18
@@ -296,11 +193,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 512M
-                    cpus: "0.5"
 
     redis:
         image: redis:8
@@ -316,11 +208,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 256M
-                    cpus: "0.25"
 
     nats:
         image: nats:2.10-alpine
@@ -336,11 +223,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 256M
-                    cpus: "0.25"
 
     # === Migrations (one-shot) ===
     migrate-central:
@@ -379,30 +261,12 @@ services:
             - RETRY_COUNT=3
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "wget",
-                    "--spider",
-                    "-q",
-                    "http://localhost:8080/health",
-                ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 10s
         depends_on:
             redis:
                 condition: service_healthy
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 64M
-                    cpus: "0.1"
 
     tasks-worker-1:
         image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
@@ -425,11 +289,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 64M
-                    cpus: "0.1"
 
     tasks-worker-2:
         image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
@@ -452,11 +311,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 64M
-                    cpus: "0.1"
 
     tasks-worker-3:
         image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
@@ -479,11 +333,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 64M
-                    cpus: "0.1"
 
     # === Observability ===
     jaeger:
@@ -518,11 +367,6 @@ services:
             - primind_frontend
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 512M
-                    cpus: "0.5"
 
     grafana:
         image: grafana/grafana:latest
@@ -543,11 +387,6 @@ services:
             - primind_frontend
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 256M
-                    cpus: "0.25"
 
     asynqmon:
         image: hibiken/asynqmon:latest
@@ -562,11 +401,6 @@ services:
             - primind_frontend
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 64M
-                    cpus: "0.1"
 
     scheduler:
         image: curlimages/curl:latest
@@ -585,11 +419,6 @@ services:
         networks:
             - primind_backend
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 32M
-                    cpus: "0.05"
 
 networks:
     primind_frontend:
