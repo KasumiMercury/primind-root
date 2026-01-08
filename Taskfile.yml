@@ -3,7 +3,7 @@
 version: '3'
 
 vars:
-  COMPOSE_DEV: compose.yaml
+  COMPOSE_DEV: compose.dev.yaml
   COMPOSE_PROD: compose.prod.yaml
 
 tasks:
