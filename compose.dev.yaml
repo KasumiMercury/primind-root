@@ -241,6 +241,7 @@ services:
             - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
             - ENV=${ENV:-dev}
             - SERVICE_NAME=notification-invoker
+            - WEB_APP_BASE_URL=http://web:5173
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         networks:
