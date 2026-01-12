@@ -49,6 +49,12 @@ services:
             - REMIND_CANCEL_QUEUE_NAME=remind-cancel
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
         depends_on:
             postgres-central:
                 condition: service_healthy
@@ -72,6 +78,12 @@ services:
             - NATS_URL=nats://nats:4222
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
         depends_on:
             postgres-time-mgmt:
                 condition: service_healthy
@@ -96,6 +108,12 @@ services:
             - REDIS_ADDR=redis:6379
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
         depends_on:
             redis:
                 condition: service_healthy
@@ -115,6 +133,12 @@ services:
             - WEB_APP_BASE_URL=${WEB_APP_BASE_URL}
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
         volumes:
             - ${GCP_CREDENTIALS_FILE}:/secrets/gcp-credentials.json:ro
         networks:
@@ -129,6 +153,12 @@ services:
             - CONFIG_PATH=/app/config.json
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 15s
         volumes:
             - ./nats-bridge.json:/app/config.json:ro
         depends_on:
@@ -242,6 +272,12 @@ services:
             - RETRY_COUNT=3
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
         depends_on:
             redis:
                 condition: service_healthy
