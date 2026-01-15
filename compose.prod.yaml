@@ -130,7 +130,6 @@ services:
             - SERVICE_NAME=notification-invoker
             - GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp-credentials.json
             - PORT=8080
-            - WEB_APP_BASE_URL=${WEB_APP_BASE_URL}
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         healthcheck:
