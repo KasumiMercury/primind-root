@@ -50,7 +50,7 @@ services:
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         healthcheck:
-            test: ["/grpc_health_probe", "-addr=:8080"]
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
             interval: 10s
             timeout: 5s
             retries: 3
@@ -79,7 +79,7 @@ services:
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         healthcheck:
-            test: ["/grpc_health_probe", "-addr=:8080"]
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
             interval: 10s
             timeout: 5s
             retries: 3
@@ -109,7 +109,7 @@ services:
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         healthcheck:
-            test: ["/grpc_health_probe", "-addr=:8080"]
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
             interval: 10s
             timeout: 5s
             retries: 3
@@ -133,7 +133,7 @@ services:
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         healthcheck:
-            test: ["/grpc_health_probe", "-addr=:8080"]
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
             interval: 10s
             timeout: 5s
             retries: 3
@@ -153,7 +153,7 @@ services:
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         healthcheck:
-            test: ["/grpc_health_probe", "-addr=:8080"]
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
             interval: 10s
             timeout: 5s
             retries: 3
@@ -272,7 +272,7 @@ services:
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         healthcheck:
-            test: ["/grpc_health_probe", "-addr=:8080"]
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
             interval: 10s
             timeout: 5s
             retries: 3
