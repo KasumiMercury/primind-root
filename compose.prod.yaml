@@ -36,7 +36,7 @@ services:
             - web
 
     central-backend:
-        image: ghcr.io/kasumimercury/primind-central-backend:sha-4a0e25c
+        image: ghcr.io/kasumimercury/primind-central-backend:sha-72f5659
         env_file:
             - .env
         environment:
@@ -68,7 +68,7 @@ services:
         restart: unless-stopped
 
     time-mgmt:
-        image: ghcr.io/kasumimercury/primind-remind-time-mgmt:sha-e995428
+        image: ghcr.io/kasumimercury/primind-remind-time-mgmt:sha-75ba43c
         env_file:
             - .env
         environment:
@@ -96,7 +96,7 @@ services:
         restart: unless-stopped
 
     throttling:
-        image: ghcr.io/kasumimercury/primind-notification-throttling:sha-86c536b
+        image: ghcr.io/kasumimercury/primind-notification-throttling:sha-0e8098e
         env_file:
             - .env
         environment:
@@ -122,7 +122,7 @@ services:
         restart: unless-stopped
 
     notification-invoker:
-        image: ghcr.io/kasumimercury/primind-notification-invoker:sha-5987b5b
+        image: ghcr.io/kasumimercury/primind-notification-invoker:sha-a4876ed
         env_file:
             - .env
         environment:
@@ -146,7 +146,7 @@ services:
         restart: unless-stopped
 
     nats-bridge:
-        image: ghcr.io/kasumimercury/primind-nats-bridge:sha-79b9988
+        image: ghcr.io/kasumimercury/primind-nats-bridge:sha-bbbac83
         environment:
             - ENV=production
             - SERVICE_NAME=nats-bridge
@@ -263,7 +263,7 @@ services:
             - primind_backend
 
     tasks-api:
-        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-api
+        image: ghcr.io/kasumimercury/primind-tasks:sha-c4a3678-api
         environment:
             - ENV=production
             - SERVICE_NAME=taskqueue-api
@@ -286,7 +286,7 @@ services:
         restart: unless-stopped
 
     tasks-worker-1:
-        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
+        image: ghcr.io/kasumimercury/primind-tasks:sha-c4a3678-worker
         environment:
             - ENV=production
             - SERVICE_NAME=taskqueue-worker-invoke
@@ -306,7 +306,7 @@ services:
         restart: unless-stopped
 
     tasks-worker-2:
-        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
+        image: ghcr.io/kasumimercury/primind-tasks:sha-c4a3678-worker
         environment:
             - ENV=production
             - SERVICE_NAME=taskqueue-worker-register
@@ -326,7 +326,7 @@ services:
         restart: unless-stopped
 
     tasks-worker-3:
-        image: ghcr.io/kasumimercury/primind-tasks:sha-5f0a83a-worker
+        image: ghcr.io/kasumimercury/primind-tasks:sha-c4a3678-worker
         environment:
             - ENV=production
             - SERVICE_NAME=taskqueue-worker-cancel
