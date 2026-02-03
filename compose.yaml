@@ -32,6 +32,12 @@ services:
             - REMIND_CANCEL_QUEUE_NAME=remind-cancel
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 60s
         depends_on:
             postgres-central:
                 condition: service_healthy
@@ -88,6 +94,12 @@ services:
             - NATS_URL=nats://nats:4222
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 60s
         depends_on:
             postgres-time-mgmt:
                 condition: service_healthy
@@ -173,9 +185,15 @@ services:
             - REDIS_ADDR=redis:6379
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 60s
         depends_on:
             time-mgmt:
-                condition: service_started
+                condition: service_healthy
             redis:
                 condition: service_healthy
         networks:
@@ -192,13 +210,19 @@ services:
             - SERVICE_NAME=nats-bridge
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 15s
         depends_on:
             nats:
                 condition: service_healthy
             throttling:
-                condition: service_started
+                condition: service_healthy
             time-mgmt:
-                condition: service_started
+                condition: service_healthy
         networks:
             - primind_backend
 
@@ -219,6 +243,12 @@ services:
             - WEB_APP_BASE_URL=http://web:5173
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 60s
         networks:
             - primind_backend
 
@@ -234,6 +264,12 @@ services:
             - SERVICE_NAME=primind-tasks-api
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 60s
         depends_on:
             redis:
                 condition: service_healthy
@@ -257,7 +293,7 @@ services:
             redis:
                 condition: service_healthy
             notification-invoker:
-                condition: service_started
+                condition: service_healthy
         networks:
             - primind_backend
 
@@ -278,7 +314,7 @@ services:
             redis:
                 condition: service_healthy
             time-mgmt:
-                condition: service_started
+                condition: service_healthy
         networks:
             - primind_backend
 
@@ -299,7 +335,7 @@ services:
             redis:
                 condition: service_healthy
             time-mgmt:
-                condition: service_started
+                condition: service_healthy
         networks:
             - primind_backend
 
