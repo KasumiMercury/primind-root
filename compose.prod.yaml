@@ -1,32 +1,49 @@
 services:
+    cloudflared-web:
+        image: cloudflare/cloudflared:latest
+        command: tunnel --no-autoupdate run
+        environment:
+            - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN_WEB}
+        networks:
+            - primind_frontend
+        restart: unless-stopped
+        profiles:
+            - web
+
+    cloudflared-api:
+        image: cloudflare/cloudflared:latest
+        command: tunnel --no-autoupdate run
+        environment:
+            - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN_API}
+        networks:
+            - primind_frontend
+        restart: unless-stopped
+
     web:
         build:
             context: ./web
-            target: dev
+            target: prod
             args:
-                VITE_APP_VERSION: ${WEB_VERSION:-dev}
-        command: ["pnpm", "run", "dev"]
-        ports:
-            - "5173:5173"
+                VITE_APP_VERSION: ${SERVICE_VERSION:-prod}
         env_file:
             - .env
         environment:
-            NODE_ENV: development
-            WATCHPACK_POLLING: "true"
-        stdin_open: true
-        tty: true
+            - NODE_ENV=production
         networks:
             - primind_frontend
+        restart: unless-stopped
+        profiles:
+            - web
 
     central-backend:
         image: ghcr.io/kasumimercury/primind-central-backend:0.1.0
-        volumes:
-            - ./central-backend:/app
         env_file:
             - .env
         environment:
-            - ENV=${ENV:-dev}
+            - ENV=production
             - SERVICE_NAME=central-backend
+            - POSTGRES_DSN=postgres://primind_user:${POSTGRES_CENTRAL_PASSWORD}@postgres-central:5432/primind_db?sslmode=disable
+            - REDIS_ADDR=redis:6379
             - PRIMIND_TASKS_URL=http://tasks-api:8080
             - REMIND_REGISTER_QUEUE_NAME=remind-register
             - REMIND_CANCEL_QUEUE_NAME=remind-cancel
@@ -43,54 +60,21 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_healthy
+            migrate-central:
+                condition: service_completed_successfully
         networks:
             - primind_frontend
             - primind_backend
-
-    postgres-central:
-        image: postgres:18
-        environment:
-            POSTGRES_USER: primind_user
-            POSTGRES_PASSWORD: primind_password
-            POSTGRES_DB: primind_db
-        volumes:
-            - postgres_central_data:/var/lib/postgresql
-        healthcheck:
-            test:
-                [
-                    "CMD-SHELL",
-                    "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1",
-                ]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 5s
-        networks:
-            - primind_backend
-
-    migrate-central:
-        image: arigaio/atlas:latest
-        command: >
-            migrate apply
-            --url postgres://primind_user:primind_password@postgres-central:5432/primind_db?sslmode=disable
-        depends_on:
-            postgres-central:
-                condition: service_healthy
-        volumes:
-            - ./central-backend/migrations/:/migrations
-        networks:
-            - primind_backend
+        restart: unless-stopped
 
     time-mgmt:
         image: ghcr.io/kasumimercury/primind-remind-time-mgmt:0.1.0
-        volumes:
-            - ./time-mgmt:/app
         env_file:
             - .env
         environment:
-            - ENV=${ENV:-dev}
+            - ENV=production
             - SERVICE_NAME=time-mgmt
-            - POSTGRES_DSN=postgres://timemgmt_user:timemgmt_password@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
+            - POSTGRES_DSN=postgres://timemgmt_user:${POSTGRES_TIME_MGMT_PASSWORD}@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
             - NATS_URL=nats://nats:4222
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
@@ -105,79 +89,18 @@ services:
                 condition: service_healthy
             nats:
                 condition: service_healthy
+            migrate-time-mgmt:
+                condition: service_completed_successfully
         networks:
             - primind_backend
-
-    postgres-time-mgmt:
-        image: postgres:18
-        environment:
-            POSTGRES_USER: timemgmt_user
-            POSTGRES_PASSWORD: timemgmt_password
-            POSTGRES_DB: timemgmt_db
-        volumes:
-            - postgres_time_mgmt_data:/var/lib/postgresql
-        healthcheck:
-            test:
-                [
-                    "CMD-SHELL",
-                    "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1",
-                ]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 5s
-        networks:
-            - primind_backend
-
-    migrate-time-mgmt:
-        image: arigaio/atlas:latest
-        command: >
-            migrate apply
-            --url postgres://timemgmt_user:timemgmt_password@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
-        depends_on:
-            postgres-time-mgmt:
-                condition: service_healthy
-        volumes:
-            - ./time-mgmt/migrations/:/migrations
-        networks:
-            - primind_backend
-
-    redis:
-        image: redis:8
-        command: ["redis-server", "--appendonly", "yes"]
-        volumes:
-            - redis_data:/data
-        healthcheck:
-            test: ["CMD", "redis-cli", "ping"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 5s
-        networks:
-            - primind_backend
-
-    nats:
-        image: nats:2.10-alpine
-        command: ["--jetstream", "--store_dir=/data"]
-        volumes:
-            - nats_data:/data
-        healthcheck:
-            test: ["CMD", "nats-server", "--version"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 5s
-        networks:
-            - primind_backend
+        restart: unless-stopped
 
     throttling:
         image: ghcr.io/kasumimercury/primind-notification-throttling:0.1.0
-        volumes:
-            - ./throttling:/app
         env_file:
             - .env
         environment:
-            - ENV=${ENV:-dev}
+            - ENV=production
             - SERVICE_NAME=notification-throttling
             - REMIND_TIME_MANAGEMENT_URL=http://time-mgmt:8080
             - PRIMIND_TASKS_URL=http://tasks-api:8080
@@ -192,22 +115,41 @@ services:
             retries: 3
             start_period: 60s
         depends_on:
-            time-mgmt:
-                condition: service_healthy
             redis:
                 condition: service_healthy
         networks:
             - primind_backend
+        restart: unless-stopped
+
+    notification-invoker:
+        image: ghcr.io/kasumimercury/primind-notification-invoker:0.1.0
+        env_file:
+            - .env
+        environment:
+            - ENV=production
+            - SERVICE_NAME=notification-invoker
+            - GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp-credentials.json
+            - PORT=8080
+            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+        healthcheck:
+            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 60s
+        volumes:
+            - ${GCP_CREDENTIALS_FILE}:/secrets/gcp-credentials.json:ro
+        networks:
+            - primind_backend
+        restart: unless-stopped
 
     nats-bridge:
         image: ghcr.io/kasumimercury/primind-nats-bridge:0.1.0
-        volumes:
-            - ./nats-bridge:/app
-            - ./nats-bridge.json:/app/config.json:ro
         environment:
-            - CONFIG_PATH=/app/config.json
-            - ENV=${ENV:-dev}
+            - ENV=production
             - SERVICE_NAME=nats-bridge
+            - CONFIG_PATH=/app/config.json
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         healthcheck:
@@ -216,52 +158,117 @@ services:
             timeout: 5s
             retries: 3
             start_period: 15s
+        volumes:
+            - ./nats-bridge.json:/app/config.json:ro
         depends_on:
             nats:
                 condition: service_healthy
-            throttling:
-                condition: service_healthy
-            time-mgmt:
-                condition: service_healthy
         networks:
             - primind_backend
+        restart: unless-stopped
 
-    notification-invoker:
-        image: ghcr.io/kasumimercury/primind-notification-invoker:0.1.0
-        volumes:
-            - ./notification-invoker:/app
-            - ${HOME}/.config/gcloud/application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json:ro
-        working_dir: /app
-        tty: true
-        stdin_open: true
-        env_file:
-            - .env
+    # === Databases ===
+    postgres-central:
+        image: postgres:18
         environment:
-            - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
-            - ENV=${ENV:-dev}
-            - SERVICE_NAME=notification-invoker
-            - WEB_APP_BASE_URL=http://web:5173
-            - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
-            - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
+            POSTGRES_USER: primind_user
+            POSTGRES_PASSWORD: ${POSTGRES_CENTRAL_PASSWORD}
+            POSTGRES_DB: primind_db
+        volumes:
+            - postgres_central_data:/var/lib/postgresql
         healthcheck:
-            test: ["CMD", "/grpc_health_probe", "-addr=:8080"]
+            test: ["CMD-SHELL", "pg_isready -U primind_user -d primind_db"]
             interval: 10s
             timeout: 5s
-            retries: 3
+            retries: 5
             start_period: 60s
         networks:
             - primind_backend
+        restart: unless-stopped
 
-    # Task Queue
+    postgres-time-mgmt:
+        image: postgres:18
+        environment:
+            POSTGRES_USER: timemgmt_user
+            POSTGRES_PASSWORD: ${POSTGRES_TIME_MGMT_PASSWORD}
+            POSTGRES_DB: timemgmt_db
+        volumes:
+            - postgres_time_mgmt_data:/var/lib/postgresql
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U timemgmt_user -d timemgmt_db"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 60s
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    redis:
+        image: redis:8
+        command: ["redis-server", "--appendonly", "yes"]
+        volumes:
+            - redis_data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    nats:
+        image: nats:2.10-alpine
+        command: ["--jetstream", "--store_dir=/data"]
+        volumes:
+            - nats_data:/data
+        healthcheck:
+            test: ["CMD", "nats-server", "--version"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+        networks:
+            - primind_backend
+        restart: unless-stopped
+
+    # === Migrations (one-shot) ===
+    migrate-central:
+        image: arigaio/atlas:latest
+        command: >
+            migrate apply
+            --url postgres://primind_user:${POSTGRES_CENTRAL_PASSWORD}@postgres-central:5432/primind_db?sslmode=disable
+        depends_on:
+            postgres-central:
+                condition: service_healthy
+        volumes:
+            - ./central-backend/migrations/:/migrations
+        networks:
+            - primind_backend
+
+    migrate-time-mgmt:
+        image: arigaio/atlas:latest
+        command: >
+            migrate apply
+            --url postgres://timemgmt_user:${POSTGRES_TIME_MGMT_PASSWORD}@postgres-time-mgmt:5432/timemgmt_db?sslmode=disable
+        depends_on:
+            postgres-time-mgmt:
+                condition: service_healthy
+        volumes:
+            - ./time-mgmt/migrations/:/migrations
+        networks:
+            - primind_backend
 
     tasks-api:
         image: ghcr.io/kasumimercury/primind-tasks:0.1.0-api
         environment:
+            - ENV=production
+            - SERVICE_NAME=taskqueue-api
             - REDIS_ADDR=redis:6379
             - API_PORT=8080
             - RETRY_COUNT=3
-            - ENV=${ENV:-dev}
-            - SERVICE_NAME=primind-tasks-api
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         healthcheck:
@@ -275,69 +282,116 @@ services:
                 condition: service_healthy
         networks:
             - primind_backend
+        restart: unless-stopped
 
     tasks-worker-1:
         image: ghcr.io/kasumimercury/primind-tasks:0.1.0-worker
         environment:
+            - ENV=production
+            - SERVICE_NAME=taskqueue-worker-invoke
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=invoke
             - TARGET_ENDPOINT=http://notification-invoker:8080/notify
             - RETRY_COUNT=3
             - WORKER_CONCURRENCY=10
             - REQUEST_TIMEOUT=30s
-            - ENV=${ENV:-dev}
-            - SERVICE_NAME=primind-tasks-worker-invoke
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             redis:
                 condition: service_healthy
-            notification-invoker:
-                condition: service_healthy
         networks:
             - primind_backend
+        restart: unless-stopped
 
     tasks-worker-2:
         image: ghcr.io/kasumimercury/primind-tasks:0.1.0-worker
         environment:
+            - ENV=production
+            - SERVICE_NAME=taskqueue-worker-register
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=remind-register
             - TARGET_ENDPOINT=http://time-mgmt:8080/api/v1/reminds
             - RETRY_COUNT=3
             - WORKER_CONCURRENCY=10
             - REQUEST_TIMEOUT=30s
-            - ENV=${ENV:-dev}
-            - SERVICE_NAME=primind-tasks-worker-remind-register
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             redis:
                 condition: service_healthy
-            time-mgmt:
-                condition: service_healthy
         networks:
             - primind_backend
+        restart: unless-stopped
 
     tasks-worker-3:
         image: ghcr.io/kasumimercury/primind-tasks:0.1.0-worker
         environment:
+            - ENV=production
+            - SERVICE_NAME=taskqueue-worker-cancel
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=remind-cancel
             - TARGET_ENDPOINT=http://time-mgmt:8080/api/v1/reminds/cancel
             - RETRY_COUNT=3
             - WORKER_CONCURRENCY=10
             - REQUEST_TIMEOUT=30s
-            - ENV=${ENV:-dev}
-            - SERVICE_NAME=primind-tasks-worker-remind-cancel
             - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
             - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=prometheus:9090
         depends_on:
             redis:
                 condition: service_healthy
-            time-mgmt:
-                condition: service_healthy
         networks:
             - primind_backend
+        restart: unless-stopped
+
+    # === Observability ===
+    jaeger:
+        image: jaegertracing/jaeger:latest
+        ports:
+            - "16686:16686"
+        environment:
+            - COLLECTOR_OTLP_ENABLED=true
+        networks:
+            - primind_frontend
+            - primind_backend
+        restart: unless-stopped
+
+    prometheus:
+        image: prom/prometheus:latest
+        ports:
+            - "9090:9090"
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.enable-lifecycle"
+            - "--web.enable-otlp-receiver"
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - prometheus_data:/prometheus
+        networks:
+            - primind_frontend
+            - primind_backend
+        restart: unless-stopped
+
+    grafana:
+        image: grafana/grafana:latest
+        ports:
+            - "3001:3000"
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
+            - GF_USERS_ALLOW_SIGN_UP=false
+        volumes:
+            - grafana_data:/var/lib/grafana
+            - ./grafana/provisioning:/etc/grafana/provisioning:ro
+            - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+        depends_on:
+            - prometheus
+            - jaeger
+        networks:
+            - primind_frontend
+            - primind_backend
+        restart: unless-stopped
 
     asynqmon:
         image: hibiken/asynqmon:latest
@@ -351,51 +405,7 @@ services:
         networks:
             - primind_frontend
             - primind_backend
-
-    jaeger:
-        image: jaegertracing/jaeger:latest
-        ports:
-            - "16686:16686"
-            - "4318:4318"
-        environment:
-            - COLLECTOR_OTLP_ENABLED=true
-        networks:
-            - primind_frontend
-            - primind_backend
-
-    prometheus:
-        image: prom/prometheus:latest
-        ports:
-            - "9090:9090"
-        volumes:
-            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-            - prometheus_data:/prometheus
-        command:
-            - "--config.file=/etc/prometheus/prometheus.yml"
-            - "--storage.tsdb.path=/prometheus"
-            - "--web.enable-lifecycle"
-            - "--web.enable-otlp-receiver"
-        networks:
-            - primind_frontend
-            - primind_backend
-
-    grafana:
-        image: grafana/grafana:latest
-        ports:
-            - "3000:3000"
-        environment:
-            - GF_SECURITY_ADMIN_USER=admin
-            - GF_SECURITY_ADMIN_PASSWORD=admin
-            - GF_USERS_ALLOW_SIGN_UP=false
-        volumes:
-            - grafana_data:/var/lib/grafana
-            - ./grafana/provisioning:/etc/grafana/provisioning:ro
-            - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-        depends_on:
-            - prometheus
-        networks:
-            - primind_frontend
-            - primind_backend
+        restart: unless-stopped
 
     scheduler:
         image: curlimages/curl:latest
@@ -405,13 +415,12 @@ services:
                 echo "Scheduler started - polling every 60 seconds"
                 while true; do
                   echo "[$(date)] Triggering throttle..."
-                  curl -s -X POST http://throttling:8080/api/v1/throttle || echo "Failed to call throttle API"
+                  curl -s -X POST http://throttling:8080/api/v1/throttle || echo "Failed"
                   sleep 60
                 done
-        depends_on:
-            - throttling
         networks:
             - primind_backend
+        restart: unless-stopped
 
 networks:
     primind_frontend:
