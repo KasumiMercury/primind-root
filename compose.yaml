@@ -19,7 +19,7 @@ services:
             - primind_frontend
 
     central-backend:
-        image: ghcr.io/kasumimercury/primind-central-backend:0.1.0-rc.4
+        image: ghcr.io/kasumimercury/primind-central-backend:0.1.0
         volumes:
             - ./central-backend:/app
         env_file:
@@ -82,7 +82,7 @@ services:
             - primind_backend
 
     time-mgmt:
-        image: ghcr.io/kasumimercury/primind-remind-time-mgmt:0.1.0-rc
+        image: ghcr.io/kasumimercury/primind-remind-time-mgmt:0.1.0
         volumes:
             - ./time-mgmt:/app
         env_file:
@@ -171,7 +171,7 @@ services:
             - primind_backend
 
     throttling:
-        image: ghcr.io/kasumimercury/primind-notification-throttling:0.1.0-rc
+        image: ghcr.io/kasumimercury/primind-notification-throttling:0.1.0
         volumes:
             - ./throttling:/app
         env_file:
@@ -200,7 +200,7 @@ services:
             - primind_backend
 
     nats-bridge:
-        image: ghcr.io/kasumimercury/primind-nats-bridge:0.1.0-rc.2
+        image: ghcr.io/kasumimercury/primind-nats-bridge:0.1.0
         volumes:
             - ./nats-bridge:/app
             - ./nats-bridge.json:/app/config.json:ro
@@ -227,7 +227,7 @@ services:
             - primind_backend
 
     notification-invoker:
-        image: ghcr.io/kasumimercury/primind-notification-invoker:0.1.0-rc
+        image: ghcr.io/kasumimercury/primind-notification-invoker:0.1.0
         volumes:
             - ./notification-invoker:/app
             - ${HOME}/.config/gcloud/application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json:ro
@@ -255,7 +255,7 @@ services:
     # Task Queue
 
     tasks-api:
-        image: ghcr.io/kasumimercury/primind-tasks:0.1.0-rc-api
+        image: ghcr.io/kasumimercury/primind-tasks:0.1.0-api
         environment:
             - REDIS_ADDR=redis:6379
             - API_PORT=8080
@@ -277,7 +277,7 @@ services:
             - primind_backend
 
     tasks-worker-1:
-        image: ghcr.io/kasumimercury/primind-tasks:0.1.0-rc-worker
+        image: ghcr.io/kasumimercury/primind-tasks:0.1.0-worker
         environment:
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=invoke
@@ -298,7 +298,7 @@ services:
             - primind_backend
 
     tasks-worker-2:
-        image: ghcr.io/kasumimercury/primind-tasks:0.1.0-rc-worker
+        image: ghcr.io/kasumimercury/primind-tasks:0.1.0-worker
         environment:
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=remind-register
@@ -319,7 +319,7 @@ services:
             - primind_backend
 
     tasks-worker-3:
-        image: ghcr.io/kasumimercury/primind-tasks:0.1.0-rc-worker
+        image: ghcr.io/kasumimercury/primind-tasks:0.1.0-worker
         environment:
             - REDIS_ADDR=redis:6379
             - QUEUE_NAME=remind-cancel
