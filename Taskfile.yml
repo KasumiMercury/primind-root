@@ -1,115 +1,439 @@
 # https://taskfile.dev
 
-version: '3'
+version: "3"
 
 vars:
-  COMPOSE_DEV: compose.dev.yaml
-  COMPOSE_PROD: compose.prod.yaml
+    COMPOSE_DEV: compose.dev.yaml
+    COMPOSE_PROD: compose.prod.yaml
 
 tasks:
-  dev:up:
-    desc: Start all services in development mode
-    cmds:
-      - docker compose -f {{.COMPOSE_DEV}} up -d
+    dev:up:
+        desc: Start all services in development mode
+        cmds:
+            - docker compose -f {{.COMPOSE_DEV}} up -d
 
-  dev:build:
-    desc: Build and start all services in development mode
-    cmds:
-      - docker compose -f {{.COMPOSE_DEV}} up -d --build
+    dev:build:
+        desc: Build and start all services in development mode
+        cmds:
+            - docker compose -f {{.COMPOSE_DEV}} up -d --build
 
-  dev:down:
-    desc: Stop all development services
-    cmds:
-      - docker compose -f {{.COMPOSE_DEV}} down
+    dev:down:
+        desc: Stop all development services
+        cmds:
+            - docker compose -f {{.COMPOSE_DEV}} down
 
-  dev:logs:
-    desc: Show logs for development services
-    cmds:
-      - docker compose -f {{.COMPOSE_DEV}} logs -f {{.CLI_ARGS}}
+    dev:logs:
+        desc: Show logs for development services
+        cmds:
+            - docker compose -f {{.COMPOSE_DEV}} logs -f {{.CLI_ARGS}}
 
-  dev:ps:
-    desc: Show status of development services
-    cmds:
-      - docker compose -f {{.COMPOSE_DEV}} ps
+    dev:ps:
+        desc: Show status of development services
+        cmds:
+            - docker compose -f {{.COMPOSE_DEV}} ps
 
-  prod:up:
-    desc: Start backend services in production mode
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} up -d
+    prod:up:
+        desc: Start backend services in production mode
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} up -d
 
-  prod:build:
-    desc: Build and start backend services in production mode
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} up -d --build
+    prod:build:
+        desc: Build and start backend services in production mode
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} up -d --build
 
-  prod:down:
-    desc: Stop production services
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} down
+    prod:down:
+        desc: Stop production services
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} down
 
-  prod:logs:
-    desc: Show logs for production services
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} logs -f {{.CLI_ARGS}}
+    prod:logs:
+        desc: Show logs for production services
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} logs -f {{.CLI_ARGS}}
 
-  prod:ps:
-    desc: Show status of production services
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} ps
+    prod:ps:
+        desc: Show status of production services
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} ps
 
-  prod:web:up:
-    desc: Start full system in production mode (backend + web frontend)
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} --profile web up -d
+    prod:web:up:
+        desc: Start full system in production mode (backend + web frontend)
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} --profile web up -d
 
-  prod:web:build:
-    desc: Build and start full system in production mode
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} --profile web up -d --build
+    prod:web:build:
+        desc: Build and start full system in production mode
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} --profile web up -d --build
 
-  prod:web:down:
-    desc: Stop full system production services
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} --profile web down
+    prod:web:down:
+        desc: Stop full system production services
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} --profile web down
 
-  prod:web:logs:
-    desc: Show logs for full system production services
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} --profile web logs -f {{.CLI_ARGS}}
+    prod:web:logs:
+        desc: Show logs for full system production services
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} --profile web logs -f {{.CLI_ARGS}}
 
-  prod:web:ps:
-    desc: Show status of full system production services
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} --profile web ps
+    prod:web:ps:
+        desc: Show status of full system production services
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} --profile web ps
 
-  clean:
-    desc: Clean up all project resources
-    cmds:
-      - docker compose -f {{.COMPOSE_DEV}} down -v --remove-orphans
-      - docker compose -f {{.COMPOSE_PROD}} --profile web down -v --remove-orphans
+    clean:
+        desc: Clean up all project resources
+        cmds:
+            - docker compose -f {{.COMPOSE_DEV}} down -v --remove-orphans
+            - docker compose -f {{.COMPOSE_PROD}} --profile web down -v --remove-orphans
 
-  clean:images:
-    desc: Remove all project images
-    cmds:
-      - docker compose -f {{.COMPOSE_DEV}} down --rmi local
-      - docker compose -f {{.COMPOSE_PROD}} --profile web down --rmi local
+    clean:images:
+        desc: Remove all project images
+        cmds:
+            - docker compose -f {{.COMPOSE_DEV}} down --rmi local
+            - docker compose -f {{.COMPOSE_PROD}} --profile web down --rmi local
 
-  migrate:
-    desc: Run database migrations (development)
-    cmds:
-      - docker compose -f {{.COMPOSE_DEV}} up migrate-central migrate-time-mgmt
+    migrate:
+        desc: Run database migrations (development)
+        cmds:
+            - docker compose -f {{.COMPOSE_DEV}} up migrate-central migrate-time-mgmt
 
-  migrate:prod:
-    desc: Run database migrations (production)
-    cmds:
-      - docker compose -f {{.COMPOSE_PROD}} up migrate-central migrate-time-mgmt
+    migrate:prod:
+        desc: Run database migrations (production)
+        cmds:
+            - docker compose -f {{.COMPOSE_PROD}} up migrate-central migrate-time-mgmt
 
-  monitoring:
-    desc: Open monitoring URLs in browser
-    cmds:
-      - cmd: 'echo "Grafana:    http://localhost:3001"'
-      - cmd: 'echo "Prometheus: http://localhost:9090"'
-      - cmd: 'echo "Jaeger:     http://localhost:16686"'
-      - cmd: 'echo "Asynqmon:   http://localhost:8081"'
-    silent: true
+    monitoring:
+        desc: Open monitoring URLs in browser
+        cmds:
+            - cmd: 'echo "Grafana:    http://localhost:3001"'
+            - cmd: 'echo "Prometheus: http://localhost:9090"'
+            - cmd: 'echo "Jaeger:     http://localhost:16686"'
+            - cmd: 'echo "Asynqmon:   http://localhost:8081"'
+        silent: true
 
+    # Terraform Tasks for GCP Deployment
+
+    tf:init-backend:
+        desc: Create GCS bucket for Terraform state storage
+        vars:
+            BUCKET_NAME: "primind-tfstate-{{.PROJECT_ID}}"
+        cmds:
+            - |
+                if [ -z "{{.PROJECT_ID}}" ]; then
+                  echo "Error: PROJECT_ID is required. Usage: task tf:init-backend PROJECT_ID=your-project-id"
+                  exit 1
+                fi
+                if ! gcloud storage buckets describe gs://{{.BUCKET_NAME}} --project={{.PROJECT_ID}} 2>/dev/null; then
+                  echo "Creating Terraform state bucket: {{.BUCKET_NAME}}"
+                  gcloud storage buckets create gs://{{.BUCKET_NAME}} \
+                    --project={{.PROJECT_ID}} \
+                    --location={{.REGION | default "asia-northeast2"}} \
+                    --uniform-bucket-level-access \
+                    --public-access-prevention
+                  gcloud storage buckets update gs://{{.BUCKET_NAME}} --versioning
+                  echo "Bucket created successfully"
+                else
+                  echo "Bucket already exists: {{.BUCKET_NAME}}"
+                fi
+
+    tf:init:
+        desc: Initialize Terraform with GCS backend
+        dir: terraform/environments/prod
+        vars:
+            BUCKET_NAME: "primind-tfstate-{{.PROJECT_ID}}"
+        cmds:
+            - |
+                if [ -z "{{.PROJECT_ID}}" ]; then
+                  echo "Error: PROJECT_ID is required. Usage: task tf:init PROJECT_ID=your-project-id"
+                  exit 1
+                fi
+                terraform init -backend-config="bucket={{.BUCKET_NAME}}"
+
+    tf:plan:
+        desc: Run Terraform plan
+        dir: terraform/environments/prod
+        cmds:
+            - terraform plan -out=tfplan
+
+    tf:apply:
+        desc: Apply Terraform changes
+        dir: terraform/environments/prod
+        cmds:
+            - terraform apply tfplan
+
+    tf:destroy:
+        desc: Destroy Terraform resources (use with caution)
+        dir: terraform/environments/prod
+        cmds:
+            - terraform destroy
+
+    tf:output:
+        desc: Show Terraform outputs
+        dir: terraform/environments/prod
+        cmds:
+            - terraform output
+
+    tf:fmt:
+        desc: Format Terraform files
+        dir: terraform
+        cmds:
+            - terraform fmt -recursive
+
+    tf:validate:
+        desc: Validate Terraform configuration
+        dir: terraform/environments/prod
+        cmds:
+            - terraform validate
+
+    # ==========================================================================
+    # GCP Hibernation Tasks (Cost Saving)
+    # ==========================================================================
+    #
+    # Hibernation stops Cloud SQL and pauses Cloud Scheduler to minimize costs.
+    # Data is preserved. Services will not work during hibernation.
+    #
+    # ==========================================================================
+
+    gcp:hibernate:
+        desc: Put infrastructure into hibernation mode (stop Cloud SQL, pause Scheduler)
+        dir: terraform/environments/prod
+        cmds:
+            - |
+                echo "Entering hibernation mode..."
+                echo "- Cloud SQL will be STOPPED (data preserved)"
+                echo "- Cloud Scheduler will be PAUSED"
+                echo "- Services will NOT work during hibernation"
+                echo ""
+                terraform apply -var="stop_costly_resources=true" -auto-approve
+                echo ""
+                echo "To wake up: task gcp:wake"
+
+    gcp:wake:
+        desc: Wake infrastructure from hibernation mode
+        dir: terraform/environments/prod
+        cmds:
+            - |
+                echo "Waking up from hibernation..."
+                echo "- Cloud SQL will be STARTED"
+                echo "- Cloud Scheduler will be RESUMED"
+                echo ""
+                terraform apply -var="stop_costly_resources=false" -auto-approve
+                echo ""
+                echo "Wake up complete. Services should be available shortly."
+
+    gcp:status:
+        desc: Check hibernation status
+        dir: terraform/environments/prod
+        cmds:
+            - |
+                STOPPED=$(terraform output -raw costly_resources_stopped 2>/dev/null || echo "unknown")
+                echo "==================================================================="
+                echo "GCP Infrastructure Status"
+                echo "==================================================================="
+                echo ""
+                if [ "$STOPPED" = "true" ]; then
+                    echo "Status: HIBERNATING"
+                    echo "  - Cloud SQL: STOPPED"
+                    echo "  - Cloud Scheduler: PAUSED"
+                    echo "  - Services: NOT WORKING"
+                    echo ""
+                    echo "To wake up: task gcp:wake"
+                elif [ "$STOPPED" = "false" ]; then
+                    echo "Status: RUNNING"
+                    echo "  - Cloud SQL: RUNNING"
+                    echo "  - Cloud Scheduler: ACTIVE"
+                    echo "  - Services: AVAILABLE"
+                    echo ""
+                    echo "To hibernate: task gcp:hibernate"
+                else
+                    echo "Status: UNKNOWN"
+                    echo "Run 'task tf:output' to check Terraform state"
+                fi
+                echo ""
+                echo "==================================================================="
+
+    # GCP Database Migration Tasks (SSH Tunnel + Local Atlas)
+    # Migration Workflow:
+    #   1. Deploy bastion: task gcp:bastion:up
+    #   2. Start tunnel: task gcp:tunnel (in separate terminal)
+    #   3. Get DSN: task gcp:migrate:dsn:central
+    #   4. Run migration: task gcp:migrate:central POSTGRES_DSN="..."
+    #   5. Destroy bastion: task gcp:bastion:down
+
+    gcp:bastion:up:
+        desc: Deploy bastion VM for migrations
+        dir: terraform/environments/prod
+        cmds:
+            - |
+                echo "Deploying bastion VM..."
+                terraform apply -var="enable_bastion=true" -auto-approve
+                echo ""
+                echo "Bastion VM deployed successfully!"
+                echo "Next steps:"
+                echo "  1. Start tunnel: task gcp:tunnel"
+                echo "  2. Run migrations (see: task gcp:migrate:help)"
+                echo "  3. Destroy bastion: task gcp:bastion:down"
+
+    gcp:bastion:down:
+        desc: Destroy bastion VM after migrations
+        dir: terraform/environments/prod
+        cmds:
+            - |
+                echo "Destroying bastion VM..."
+                terraform apply -var="enable_bastion=false" -auto-approve
+                echo ""
+                echo "Bastion VM destroyed."
+
+    gcp:tunnel:
+        desc: Start SSH tunnel to Cloud SQL via bastion (run in separate terminal)
+        dir: terraform/environments/prod
+        cmds:
+            - |
+                ENABLED=$(terraform output -raw bastion_enabled 2>/dev/null || echo "false")
+                if [ "$ENABLED" != "true" ]; then
+                    echo "Error: Bastion is not deployed"
+                    echo ""
+                    echo "Deploy bastion first:"
+                    echo "  task gcp:bastion:up"
+                    exit 1
+                fi
+
+                TUNNEL_CMD=$(terraform output -raw bastion_tunnel_command)
+                echo "Starting SSH tunnel to Cloud SQL..."
+                echo "Local port 5432 -> Cloud SQL"
+                echo ""
+                echo "Keep this terminal open while running migrations."
+                echo "Press Ctrl+C to close the tunnel."
+                echo ""
+                eval "$TUNNEL_CMD"
+
+    gcp:migrate:dsn:central:
+        desc: Print DSN for central-backend migrations (requires tunnel)
+        dir: terraform/environments/prod
+        cmds:
+            - |
+                USER=$(terraform output -raw central_backend_db_user 2>/dev/null)
+                NAME=$(terraform output -raw central_backend_db_name 2>/dev/null)
+                SECRET=$(terraform output -raw central_backend_db_password_secret 2>/dev/null)
+
+                if [ -z "$USER" ] || [ -z "$NAME" ] || [ -z "$SECRET" ]; then
+                    echo "Error: Could not get database info from Terraform outputs" >&2
+                    exit 1
+                fi
+
+                PASSWORD=$(gcloud secrets versions access latest --secret="$SECRET" 2>/dev/null)
+                if [ $? -ne 0 ]; then
+                    echo "Error: Could not access secret '$SECRET'" >&2
+                    echo "Check that the secret exists and you have access." >&2
+                    exit 1
+                fi
+
+                echo "postgresql://${USER}:${PASSWORD}@localhost:5432/${NAME}?sslmode=disable"
+
+    gcp:migrate:dsn:time-mgmt:
+        desc: Print DSN for time-mgmt migrations (requires tunnel)
+        dir: terraform/environments/prod
+        cmds:
+            - |
+                USER=$(terraform output -raw time_mgmt_db_user 2>/dev/null)
+                NAME=$(terraform output -raw time_mgmt_db_name 2>/dev/null)
+                SECRET=$(terraform output -raw time_mgmt_db_password_secret 2>/dev/null)
+
+                if [ -z "$USER" ] || [ -z "$NAME" ] || [ -z "$SECRET" ]; then
+                    echo "Error: Could not get database info from Terraform outputs" >&2
+                    exit 1
+                fi
+
+                PASSWORD=$(gcloud secrets versions access latest --secret="$SECRET" 2>/dev/null)
+                if [ $? -ne 0 ]; then
+                    echo "Error: Could not access secret '$SECRET'" >&2
+                    exit 1
+                fi
+
+                echo "postgresql://${USER}:${PASSWORD}@localhost:5432/${NAME}?sslmode=disable"
+
+    gcp:migrate:central:
+        desc: Run Atlas migrations for central-backend
+        cmds:
+            - |
+                if [ -z "{{.POSTGRES_DSN}}" ]; then
+                    echo "Error: POSTGRES_DSN is required"
+                    echo ""
+                    echo "Usage:"
+                    echo "  1. Start tunnel: task gcp:tunnel (in another terminal)"
+                    echo "  2. Get DSN: task gcp:migrate:dsn:central"
+                    echo "  3. Run: task gcp:migrate:central POSTGRES_DSN=\"<paste dsn>\""
+                    exit 1
+                fi
+                cd central-backend && atlas migrate apply --url "{{.POSTGRES_DSN}}"
+
+    gcp:migrate:time-mgmt:
+        desc: Run Atlas migrations for time-mgmt
+        cmds:
+            - |
+                if [ -z "{{.POSTGRES_DSN}}" ]; then
+                    echo "Error: POSTGRES_DSN is required"
+                    echo ""
+                    echo "Usage:"
+                    echo "  1. Start tunnel: task gcp:tunnel (in another terminal)"
+                    echo "  2. Get DSN: task gcp:migrate:dsn:time-mgmt"
+                    echo "  3. Run: task gcp:migrate:time-mgmt POSTGRES_DSN=\"<paste dsn>\""
+                    exit 1
+                fi
+                cd time-mgmt && atlas migrate apply --url "{{.POSTGRES_DSN}}"
+
+    gcp:migrate:status:central:
+        desc: Check migration status for central-backend
+        cmds:
+            - |
+                if [ -z "{{.POSTGRES_DSN}}" ]; then
+                    echo "Error: POSTGRES_DSN is required"
+                    exit 1
+                fi
+                cd central-backend && atlas migrate status --url "{{.POSTGRES_DSN}}"
+
+    gcp:migrate:status:time-mgmt:
+        desc: Check migration status for time-mgmt
+        cmds:
+            - |
+                if [ -z "{{.POSTGRES_DSN}}" ]; then
+                    echo "Error: POSTGRES_DSN is required"
+                    exit 1
+                fi
+                cd time-mgmt && atlas migrate status --url "{{.POSTGRES_DSN}}"
+
+    gcp:migrate:help:
+        desc: Show migration workflow guide
+        cmds:
+            - |
+                echo "==================================================================="
+                echo "GCP Database Migration Guide (SSH Tunnel + Local Atlas)"
+                echo "==================================================================="
+                echo ""
+                echo "STEP 1: Deploy bastion VM"
+                echo "    task gcp:bastion:up"
+                echo ""
+                echo "STEP 2: Start SSH tunnel (in separate terminal)"
+                echo "    task gcp:tunnel"
+                echo ""
+                echo "STEP 3: Get DSN and run migrations"
+                echo ""
+                echo "  For Bash/Zsh:"
+                echo "    DSN=\$(task gcp:migrate:dsn:central)"
+                echo "    task gcp:migrate:central POSTGRES_DSN=\"\$DSN\""
+                echo ""
+                echo "  For Fish:"
+                echo "    set DSN (task gcp:migrate:dsn:central)"
+                echo "    task gcp:migrate:central POSTGRES_DSN=\"\$DSN\""
+                echo ""
+                echo "  Repeat for time-mgmt:"
+                echo "    DSN=\$(task gcp:migrate:dsn:time-mgmt)"
+                echo "    task gcp:migrate:time-mgmt POSTGRES_DSN=\"\$DSN\""
+                echo ""
+                echo "STEP 4: Close tunnel and destroy bastion"
+                echo "  Press Ctrl+C in the tunnel terminal"
+                echo "    task gcp:bastion:down"
+                echo ""
+                echo "==================================================================="
