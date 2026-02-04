@@ -47,3 +47,16 @@ variable "private_vpc_connection" {
   description = "Private VPC connection ID (dependency)"
   type        = string
 }
+
+# Cost management
+variable "enabled" {
+  description = "Whether to create the database instance"
+  type        = bool
+  default     = true
+}
+
+variable "stopped" {
+  description = "Whether to stop the database instance (activation_policy=NEVER)"
+  type        = bool
+  default     = false
+}

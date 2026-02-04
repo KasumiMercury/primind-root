@@ -1,7 +1,14 @@
+# Random suffix for queue names (generated once, stored in state)
+resource "random_string" "queue_suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
 # Cloud Tasks queues for remind operations
 resource "google_cloud_tasks_queue" "remind_register" {
   project  = var.project_id
-  name     = "remind-register"
+  name     = "remind-register-${random_string.queue_suffix.result}"
   location = var.region
 
   rate_limits {
@@ -23,7 +30,7 @@ resource "google_cloud_tasks_queue" "remind_register" {
 
 resource "google_cloud_tasks_queue" "remind_cancel" {
   project  = var.project_id
-  name     = "remind-cancel"
+  name     = "remind-cancel-${random_string.queue_suffix.result}"
   location = var.region
 
   rate_limits {

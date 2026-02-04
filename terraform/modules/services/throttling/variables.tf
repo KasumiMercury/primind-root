@@ -102,3 +102,9 @@ variable "scheduler_schedule" {
   type        = string
   default     = "*/5 * * * *"
 }
+
+variable "scheduler_paused" {
+  description = "Whether to pause the Cloud Scheduler job (for hibernation mode)"
+  type        = bool
+  default     = false
+}

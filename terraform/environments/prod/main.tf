@@ -33,6 +33,9 @@ module "networking" {
   project_id = var.project_id
   region     = var.region
 
+  # Cost management: VPC connector is not needed if database is deleted
+  vpc_connector_enabled = !var.delete_costly_resources
+
   depends_on = [module.apis]
 }
 
@@ -48,6 +51,10 @@ module "database" {
   private_network        = module.networking.vpc_self_link
   private_vpc_connection = module.networking.private_vpc_connection
 
+  # Cost management
+  enabled = !var.delete_costly_resources
+  stopped = var.stop_costly_resources
+
   depends_on = [module.apis, module.networking]
 }
 
@@ -59,6 +66,9 @@ module "redis" {
   primary_region = var.redis.primary_region
   tls            = var.redis.tls
   eviction       = var.redis.eviction
+
+  # Cost management
+  enabled = !var.delete_costly_resources
 
   depends_on = [module.apis]
 }
@@ -91,6 +101,9 @@ module "notification_invoker" {
 module "time_mgmt" {
   source = "../../modules/services/time-mgmt"
 
+  # Skip if database is deleted
+  count = var.delete_costly_resources ? 0 : 1
+
   project_id            = var.project_id
   region                = var.region
   artifact_registry_url = module.artifact_registry.repository_url
@@ -113,6 +126,9 @@ module "time_mgmt" {
 module "throttling" {
   source = "../../modules/services/throttling"
 
+  # Skip if database/redis is deleted
+  count = var.delete_costly_resources ? 0 : 1
+
   project_id            = var.project_id
   region                = var.region
   artifact_registry_url = module.artifact_registry.repository_url
@@ -132,15 +148,21 @@ module "throttling" {
   # Inter-service dependencies
   notification_invoker_url          = module.notification_invoker.service_url
   notification_invoker_service_name = module.notification_invoker.service_name
-  time_mgmt_url                     = module.time_mgmt.service_url
-  time_mgmt_service_name            = module.time_mgmt.service_name
-  remind_events_topic_id            = module.time_mgmt.pubsub_topic_id
+  time_mgmt_url                     = module.time_mgmt[0].service_url
+  time_mgmt_service_name            = module.time_mgmt[0].service_name
+  remind_events_topic_id            = module.time_mgmt[0].pubsub_topic_id
+
+  # Hibernation mode
+  scheduler_paused = var.stop_costly_resources
 
   depends_on = [module.notification_invoker, module.time_mgmt, module.redis]
 }
 
 module "central_backend" {
   source = "../../modules/services/central-backend"
+
+  # Skip if database/redis is deleted
+  count = var.delete_costly_resources ? 0 : 1
 
   project_id            = var.project_id
   region                = var.region
@@ -170,8 +192,26 @@ module "central_backend" {
   oidc_google_redirect_uri  = var.oidc_google_redirect_uri
 
   # Inter-service dependencies
-  time_mgmt_url          = module.time_mgmt.service_url
-  time_mgmt_service_name = module.time_mgmt.service_name
+  time_mgmt_url          = module.time_mgmt[0].service_url
+  time_mgmt_service_name = module.time_mgmt[0].service_name
 
   depends_on = [module.database, module.redis, module.time_mgmt]
+}
+
+# =============================================================================
+# Migration Support (Bastion VM)
+# =============================================================================
+
+module "bastion" {
+  source = "../../modules/shared/bastion"
+
+  project_id = var.project_id
+  region     = var.region
+  enabled    = var.enable_bastion && !var.delete_costly_resources
+
+  vpc_name            = module.networking.vpc_name
+  subnet_name         = module.networking.private_subnet_name
+  database_private_ip = module.database.private_ip
+
+  depends_on = [module.apis, module.networking, module.database]
 }

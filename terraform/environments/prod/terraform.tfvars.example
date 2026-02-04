@@ -15,8 +15,9 @@ database = {
 }
 
 redis = {
-  tier           = "BASIC"
-  memory_size_gb = 1
+  primary_region = "ap-northeast-1"
+  tls            = true
+  eviction       = true
 }
 
 # =============================================================================
@@ -76,3 +77,30 @@ services = {
 # =============================================================================
 # export TF_VAR_oidc_google_client_id="your-google-client-id"
 # export TF_VAR_oidc_google_client_secret="your-google-client-secret"
+
+# =============================================================================
+# Upstash Credentials (for Redis)
+# Set via environment variables:
+# =============================================================================
+# export TF_VAR_upstash_email="your-upstash-email"
+# export TF_VAR_upstash_api_key="your-upstash-api-key"
+
+# =============================================================================
+# Migration Configuration
+# Bastion VM is managed via task commands (do not set here):
+#   task gcp:bastion:up   - Deploy bastion VM
+#   task gcp:bastion:down - Destroy bastion VM
+# See: task gcp:migrate:help for full migration workflow
+# =============================================================================
+# enable_bastion = false  # Managed via task commands
+
+# =============================================================================
+# Cost Management
+# Uncomment to reduce costs by stopping or deleting costly resources
+# =============================================================================
+# Stop Cloud SQL (data preserved, services won't work)
+# stop_costly_resources = true
+
+# Delete all costly resources (Cloud SQL, VPC Connector, Redis)
+# WARNING: Data will be lost! Services will also be deleted.
+# delete_costly_resources = true

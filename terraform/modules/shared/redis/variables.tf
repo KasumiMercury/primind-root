@@ -26,3 +26,10 @@ variable "eviction" {
   type        = bool
   default     = true
 }
+
+# Cost management
+variable "enabled" {
+  description = "Whether to create the Redis database"
+  type        = bool
+  default     = true
+}

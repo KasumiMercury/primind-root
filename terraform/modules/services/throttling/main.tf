@@ -111,6 +111,10 @@ resource "google_cloud_run_v2_service" "throttling" {
   }
 
   labels = local.labels
+
+  depends_on = [
+    google_secret_manager_secret_iam_member.redis_auth_access,
+  ]
 }
 
 # Allow Pub/Sub to invoke this service

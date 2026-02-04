@@ -81,7 +81,9 @@ resource "google_cloud_run_v2_service" "time_mgmt" {
   labels = local.labels
 
   depends_on = [
-    google_secret_manager_secret_version.postgres_dsn
+    google_secret_manager_secret_version.postgres_dsn,
+    google_secret_manager_secret_iam_member.db_password_access,
+    google_secret_manager_secret_iam_member.postgres_dsn_access,
   ]
 }
 

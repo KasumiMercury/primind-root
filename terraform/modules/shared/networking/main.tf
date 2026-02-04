@@ -43,6 +43,8 @@ resource "google_service_networking_connection" "private_vpc_connection" {
 
 # Serverless VPC Access Connector for Cloud Run
 resource "google_vpc_access_connector" "connector" {
+  count = var.vpc_connector_enabled ? 1 : 0
+
   project       = var.project_id
   name          = "${var.vpc_name}-connector"
   region        = var.region

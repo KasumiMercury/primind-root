@@ -161,7 +161,13 @@ resource "google_cloud_run_v2_service" "central_backend" {
   labels = local.labels
 
   depends_on = [
-    google_secret_manager_secret_version.postgres_dsn
+    google_secret_manager_secret_version.postgres_dsn,
+    google_secret_manager_secret_iam_member.db_password_access,
+    google_secret_manager_secret_iam_member.postgres_dsn_access,
+    google_secret_manager_secret_iam_member.session_secret_access,
+    google_secret_manager_secret_iam_member.oidc_client_id_access,
+    google_secret_manager_secret_iam_member.oidc_client_secret_access,
+    google_secret_manager_secret_iam_member.redis_auth_access,
   ]
 }
 

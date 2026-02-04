@@ -127,3 +127,27 @@ variable "web_app_url" {
   description = "Web application URL (deployed to Cloudflare Workers)"
   type        = string
 }
+
+# =============================================================================
+# Cost Management
+# =============================================================================
+variable "delete_costly_resources" {
+  description = "Delete costly resources (Cloud SQL, VPC Connector, Redis). WARNING: Data will be lost!"
+  type        = bool
+  default     = false
+}
+
+variable "stop_costly_resources" {
+  description = "Stop costly resources (Cloud SQL only). Data is preserved but services won't work."
+  type        = bool
+  default     = false
+}
+
+# =============================================================================
+# Migration Configuration
+# =============================================================================
+variable "enable_bastion" {
+  description = "Enable bastion VM for database migrations. Managed via task commands."
+  type        = bool
+  default     = false
+}

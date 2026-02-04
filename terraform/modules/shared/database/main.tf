@@ -1,6 +1,8 @@
 # Cloud SQL PostgreSQL Instance (shared)
 # Databases and users are created by individual service modules
 resource "google_sql_database_instance" "postgres" {
+  count = var.enabled ? 1 : 0
+
   project          = var.project_id
   name             = var.instance_name
   region           = var.region
@@ -15,6 +17,7 @@ resource "google_sql_database_instance" "postgres" {
     disk_type         = var.disk_type
     disk_autoresize   = false
     availability_type = "ZONAL" # Single zone for cost optimization
+    activation_policy = var.stopped ? "NEVER" : "ALWAYS"
 
     ip_configuration {
       ipv4_enabled    = false # Private IP only

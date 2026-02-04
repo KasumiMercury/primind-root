@@ -49,3 +49,10 @@ variable "psc_ip_range" {
   type        = string
   default     = "10.64.0.0/16"
 }
+
+# Cost management
+variable "vpc_connector_enabled" {
+  description = "Whether to create the VPC Access connector (costs ~$7/month)"
+  type        = bool
+  default     = true
+}

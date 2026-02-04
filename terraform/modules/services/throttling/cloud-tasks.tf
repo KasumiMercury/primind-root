@@ -1,7 +1,14 @@
+# Random suffix for queue names (generated once, stored in state)
+resource "random_string" "queue_suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
 # Cloud Tasks queue for invoke operations
 resource "google_cloud_tasks_queue" "invoke" {
   project  = var.project_id
-  name     = "invoke"
+  name     = "invoke-${random_string.queue_suffix.result}"
   location = var.region
 
   rate_limits {

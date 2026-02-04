@@ -6,6 +6,7 @@ resource "google_cloud_scheduler_job" "throttle" {
   region      = var.region
   schedule    = var.scheduler_schedule
   time_zone   = "Asia/Tokyo"
+  paused      = var.scheduler_paused
 
   http_target {
     uri         = "${google_cloud_run_v2_service.throttling.uri}/api/v1/throttle"

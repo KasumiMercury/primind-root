@@ -25,12 +25,17 @@ output "private_subnet_name" {
 
 output "vpc_connector_id" {
   description = "The ID of the VPC Access connector"
-  value       = google_vpc_access_connector.connector.id
+  value       = var.vpc_connector_enabled ? google_vpc_access_connector.connector[0].id : null
 }
 
 output "vpc_connector_name" {
   description = "The name of the VPC Access connector"
-  value       = google_vpc_access_connector.connector.name
+  value       = var.vpc_connector_enabled ? google_vpc_access_connector.connector[0].name : null
+}
+
+output "vpc_connector_enabled" {
+  description = "Whether the VPC Access connector is enabled"
+  value       = var.vpc_connector_enabled
 }
 
 output "private_vpc_connection" {
