@@ -176,7 +176,7 @@ Each service can be configured independently:
 ```hcl
 services = {
   central_backend = {
-    image_tag     = "v1.0.0"
+    image_tag     = "1.0.0"
     min_instances = 0
     max_instances = 3
     cpu           = "1"
@@ -188,7 +188,7 @@ services = {
     }
   }
   time_mgmt = {
-    image_tag     = "v1.0.0"
+    image_tag     = "1.0.0"
     # ... similar configuration
   }
   # ...

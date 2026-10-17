@@ -32,7 +32,7 @@ oidc_google_redirect_uri = "https://api.primind.example.com/auth/callback"
 # =============================================================================
 services = {
   central_backend = {
-    image_tag     = "v0.2.0"
+    image_tag     = "0.2.0"
     min_instances = 0
     max_instances = 3
     cpu           = "1"
@@ -44,7 +44,7 @@ services = {
     # }
   }
   time_mgmt = {
-    image_tag     = "v0.2.0"
+    image_tag     = "0.2.0"
     min_instances = 0
     max_instances = 3
     cpu           = "1"
@@ -56,14 +56,14 @@ services = {
     # }
   }
   throttling = {
-    image_tag     = "v0.2.0"
+    image_tag     = "0.2.0"
     min_instances = 0
     max_instances = 3
     cpu           = "1"
     memory        = "512Mi"
   }
   notification_invoker = {
-    image_tag     = "v0.2.0"
+    image_tag     = "0.2.0"
     min_instances = 0
     max_instances = 5
     cpu           = "1"
