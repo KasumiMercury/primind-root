@@ -66,7 +66,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_requests_total[5m])) + sum(rate(rpc_server_duration_milliseconds_count[5m]))",
+          "expr": "sum(rate(http_requests_total[5m])) + sum(rate(rpc_server_call_duration_seconds_count[5m]))",
           "legendFormat": "Total",
           "refId": "A"
         }
@@ -196,7 +196,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "count(count by(job) (http_requests_total)) + count(count by(rpc_service) (rpc_server_duration_milliseconds_count))",
+          "expr": "count(count by(job) (http_requests_total)) + count(count by(rpc_service) (label_replace(rpc_server_call_duration_seconds_count, \"rpc_service\", \"$1\", \"rpc_method\", \"([^/]+)/.*\")))",
           "legendFormat": "Services",
           "refId": "A"
         }
@@ -257,7 +257,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by(rpc_service) (rate(rpc_server_duration_milliseconds_count[5m]))",
+          "expr": "sum by(rpc_service) (label_replace(rate(rpc_server_call_duration_seconds_count[5m]), \"rpc_service\", \"$1\", \"rpc_method\", \"([^/]+)/.*\"))",
           "legendFormat": "{{rpc_service}}",
           "refId": "A"
         }
@@ -310,7 +310,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by(rpc_method) (rate(rpc_server_duration_milliseconds_count[5m]))",
+          "expr": "sum by(rpc_method) (rate(rpc_server_call_duration_seconds_count[5m]))",
           "legendFormat": "{{rpc_method}}",
           "refId": "A"
         }
@@ -349,7 +349,7 @@
             "mode": "absolute",
             "steps": [{ "color": "green", "value": null }]
           },
-          "unit": "ms"
+          "unit": "s"
         },
         "overrides": [
           {
@@ -376,19 +376,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, sum by(le) (rate(rpc_server_duration_milliseconds_bucket{rpc_service=\"auth.v1.AuthService\"}[5m])))",
+          "expr": "histogram_quantile(0.50, sum by(le) (rate(rpc_server_call_duration_seconds_bucket{rpc_method=~\"auth\\\\.v1\\\\.AuthService/.*\"}[5m])))",
           "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(rpc_server_duration_milliseconds_bucket{rpc_service=\"auth.v1.AuthService\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rpc_server_call_duration_seconds_bucket{rpc_method=~\"auth\\\\.v1\\\\.AuthService/.*\"}[5m])))",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, sum by(le) (rate(rpc_server_duration_milliseconds_bucket{rpc_service=\"auth.v1.AuthService\"}[5m])))",
+          "expr": "histogram_quantile(0.99, sum by(le) (rate(rpc_server_call_duration_seconds_bucket{rpc_method=~\"auth\\\\.v1\\\\.AuthService/.*\"}[5m])))",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -427,7 +427,7 @@
             "mode": "absolute",
             "steps": [{ "color": "green", "value": null }]
           },
-          "unit": "ms"
+          "unit": "s"
         },
         "overrides": [
           {
@@ -454,19 +454,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, sum by(le) (rate(rpc_server_duration_milliseconds_bucket{rpc_service=\"device.v1.DeviceService\"}[5m])))",
+          "expr": "histogram_quantile(0.50, sum by(le) (rate(rpc_server_call_duration_seconds_bucket{rpc_method=~\"device\\\\.v1\\\\.DeviceService/.*\"}[5m])))",
           "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(rpc_server_duration_milliseconds_bucket{rpc_service=\"device.v1.DeviceService\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rpc_server_call_duration_seconds_bucket{rpc_method=~\"device\\\\.v1\\\\.DeviceService/.*\"}[5m])))",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, sum by(le) (rate(rpc_server_duration_milliseconds_bucket{rpc_service=\"device.v1.DeviceService\"}[5m])))",
+          "expr": "histogram_quantile(0.99, sum by(le) (rate(rpc_server_call_duration_seconds_bucket{rpc_method=~\"device\\\\.v1\\\\.DeviceService/.*\"}[5m])))",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -505,7 +505,7 @@
             "mode": "absolute",
             "steps": [{ "color": "green", "value": null }]
           },
-          "unit": "ms"
+          "unit": "s"
         },
         "overrides": [
           {
@@ -532,19 +532,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, sum by(le) (rate(rpc_server_duration_milliseconds_bucket{rpc_service=\"task.v1.TaskService\"}[5m])))",
+          "expr": "histogram_quantile(0.50, sum by(le) (rate(rpc_server_call_duration_seconds_bucket{rpc_method=~\"task\\\\.v1\\\\.TaskService/.*\"}[5m])))",
           "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(rpc_server_duration_milliseconds_bucket{rpc_service=\"task.v1.TaskService\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rpc_server_call_duration_seconds_bucket{rpc_method=~\"task\\\\.v1\\\\.TaskService/.*\"}[5m])))",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, sum by(le) (rate(rpc_server_duration_milliseconds_bucket{rpc_service=\"task.v1.TaskService\"}[5m])))",
+          "expr": "histogram_quantile(0.99, sum by(le) (rate(rpc_server_call_duration_seconds_bucket{rpc_method=~\"task\\\\.v1\\\\.TaskService/.*\"}[5m])))",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -579,8 +579,8 @@
           {
             "matcher": { "id": "byName", "options": "p95 Latency" },
             "properties": [
-              { "id": "unit", "value": "ms" },
-              { "id": "decimals", "value": 1 }
+              { "id": "unit", "value": "s" },
+              { "id": "decimals", "value": 3 }
             ]
           }
         ]
@@ -597,7 +597,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by(rpc_service, rpc_method) (rate(rpc_server_duration_milliseconds_count[5m])) > 0",
+          "expr": "sum by(rpc_method) (rate(rpc_server_call_duration_seconds_count[5m])) > 0",
           "format": "table",
           "instant": true,
           "legendFormat": "",
@@ -605,7 +605,7 @@
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum by(rpc_service, rpc_method, le) (rate(rpc_server_duration_milliseconds_bucket[5m]))) and on(rpc_service, rpc_method) (sum by(rpc_service, rpc_method) (rate(rpc_server_duration_milliseconds_count[5m])) > 0)",
+          "expr": "histogram_quantile(0.95, sum by(rpc_method, le) (rate(rpc_server_call_duration_seconds_bucket[5m]))) and on(rpc_method) (sum by(rpc_method) (rate(rpc_server_call_duration_seconds_count[5m])) > 0)",
           "format": "table",
           "instant": true,
           "legendFormat": "",
